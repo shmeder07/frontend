@@ -377,15 +377,28 @@ function init() {
 
 async function fetchLogsFromDatabase() {
   try {
-    const response = await fetch('https://waste-log-api.onrender.com/api/logs');
-    const logs = await response.json();
+    const res = await fetch('https://waste-log-api.onrender.com/api/logs');
+    const logs = await res.json();
     if (Array.isArray(logs)) {
-      store.logs = logs;
-      // Refresh your app's UI/dashboard to display the logs
-      renderApp(); 
+      // Map database snake_case or column names to your app's state format if needed, 
+      // or load them directly into state.log
+      state.log = logs.map(row => ({
+        id: row.id,
+        day: row.day ? row.day.slice(0, 10) : todayKey(),
+        time: row.time || '',
+        shift: row.shift || 'AM',
+        cat: row.category || 'Kitchen',
+        item: row.item || '',
+        qty: row.quantity || 1,
+        cost: parseFloat(row.unit_cost || 0),
+        total: parseFloat(row.total_cost || 0),
+        reason: row.reason || 'Other',
+        user: row.staff || 'Unknown'
+      }));
+      render();
     }
   } catch (err) {
-    console.error('Error loading logs from database:', err);
+    console.error('Error loading logs from Neon:', err);
   }
 }
 
@@ -599,6 +612,8 @@ function logEntry() {
   const entry = {
     id: Date.now().toString(),
     ts: new Date().toISOString(),
+    day: new Date().toISOString().slice(0, 10), // Ensures 'day' is populated for the database
+    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), // Ensures 'time' is populated
     user: currentUser.name,
     cat: currentCat,
     item: itemName,
@@ -612,22 +627,55 @@ function logEntry() {
   store.logs.unshift(entry);
   saveStore();
   
+  // Send the new entry directly to your Render backend & Neon database
+  syncEntry(entry);
+  
   document.getElementById('qty').value = 1;
   renderEntries();
+}
   
-  // Send the new waste entry directly to your Render backend & Neon database
-const syncPayload = {
-  day: entry.day,         // or whatever date variable your app uses
-  time: entry.time,
-  shift: entry.shift,
-  category: entry.category,
-  item: entry.item,
-  qty: entry.quantity || entry.qty,
-  unitCost: entry.unitCost,
-  totalCost: entry.totalCost,
-  reason: entry.reason,
-  staff: currentUser ? currentUser.name : 'Unknown'
-};
+  async function syncEntry(entry) {
+  const url = 'https://waste-log-api.onrender.com/api/sync';
+  const s = document.getElementById('syncStatus');
+  if (s) { s.style.color = 'var(--muted)'; s.textContent = 'Syncing to server...'; }
+
+  const syncPayload = {
+    day: entry.day,
+    time: entry.time,
+    shift: entry.shift,
+    category: entry.cat,      // Maps entry.cat to category
+    item: entry.item,
+    quantity: entry.qty,      // Maps entry.qty to quantity
+    unitCost: entry.cost,     // Maps entry.cost to unitCost
+    totalCost: entry.total,
+    reason: entry.reason,
+    staff: entry.user         // Maps entry.user to staff
+  };
+
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(syncPayload)
+    });
+    
+    if (res.ok) {
+      if (s) { 
+        s.style.color = 'var(--good)'; 
+        s.textContent = '✓ Synced to Neon'; 
+        setTimeout(() => { s.textContent = ''; }, 2000);
+      }
+    } else {
+      throw new Error('Bad response');
+    }
+  } catch (err) {
+    if (s) { 
+      s.style.color = 'var(--bad)'; 
+      s.textContent = '✗ Sync failed - saved locally only'; 
+    }
+    console.error('Cloud sync error:', err);
+  }
+}
 
 document.getElementById('syncStatus').textContent = 'Syncing to cloud...';
 
