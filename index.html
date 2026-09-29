@@ -429,23 +429,41 @@ async function doLogin() {
   }
 }
 
-function doRegister() {
+async function doRegister() {
   const name = document.getElementById('rgName').value.trim();
   const user = document.getElementById('rgUser').value.trim();
   const pass = document.getElementById('rgPass').value;
   const isMgr = document.getElementById('rgMgr').checked;
-  
-  if (!name || !user || !pass) return document.getElementById('rgErr').textContent = 'Fill all fields';
-  if (store.users.find(x => x.username === user)) return document.getElementById('rgErr').textContent = 'Username taken';
-  if (!isMgr && rgSelFields.length === 0) return document.getElementById('rgErr').textContent = 'Select at least one field';
 
-  const newUser = { name, username: user, pass, isMgr, fields: isMgr ? CATS.map(c=>c.key) : rgSelFields };
-  store.users.push(newUser);
-  saveStore();
-  
-  currentUser = newUser;
-  sessionStorage.setItem('wl_user', user);
-  showApp();
+  if (!name || !user || !pass) return document.getElementById('rgErr').textContent = 'Fill all fields';
+  if (!isMgr && typeof rgSelFields !== 'undefined' && rgSelFields.length === 0) {
+    return document.getElementById('rgErr').textContent = 'Select at least one field';
+  }
+
+  try {
+    const response = await fetch('https://waste-log-api.onrender.com/api/signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        name, 
+        username: user, 
+        password: pass, 
+        is_manager: isMgr 
+      })
+    });
+
+    const data = await response.json();
+    if (data.success) {
+      currentUser = data.user;
+      sessionStorage.setItem('wl_user', data.user.username);
+      showApp();
+    } else {
+      document.getElementById('rgErr').textContent = data.error || 'Registration failed';
+    }
+  } catch (err) {
+    console.error('Signup error:', err);
+    document.getElementById('rgErr').textContent = 'Server connection error';
+  }
 }
 
 function logout() {
