@@ -375,6 +375,20 @@ function init() {
   }
 }
 
+async function fetchLogsFromDatabase() {
+  try {
+    const response = await fetch('https://waste-log-api.onrender.com/api/logs');
+    const logs = await response.json();
+    if (Array.isArray(logs)) {
+      store.logs = logs;
+      // Refresh your app's UI/dashboard to display the logs
+      renderApp(); 
+    }
+  } catch (err) {
+    console.error('Error loading logs from database:', err);
+  }
+}
+
 /* ---------- AUTH LOGIC ---------- */
 function setAuthTab(tab) {
   document.getElementById('loginForm').classList.toggle('hidden', tab !== 'login');
@@ -601,21 +615,39 @@ function logEntry() {
   document.getElementById('qty').value = 1;
   renderEntries();
   
-  // Sync
-  if (store.settings.syncUrl) {
-    document.getElementById('syncStatus').textContent = 'Syncing...';
-    fetch(store.settings.syncUrl, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify(entry)
-    }).then(() => {
-      document.getElementById('syncStatus').textContent = '✓ Synced to server';
-      setTimeout(()=>document.getElementById('syncStatus').textContent='', 2000);
-    }).catch(() => {
-      document.getElementById('syncStatus').textContent = '⚠ Saved locally. Sync failed.';
-    });
-  }
-}
+  // Send the new waste entry directly to your Render backend & Neon database
+const syncPayload = {
+  day: entry.day,         // or whatever date variable your app uses
+  time: entry.time,
+  shift: entry.shift,
+  category: entry.category,
+  item: entry.item,
+  qty: entry.quantity || entry.qty,
+  unitCost: entry.unitCost,
+  totalCost: entry.totalCost,
+  reason: entry.reason,
+  staff: currentUser ? currentUser.name : 'Unknown'
+};
+
+document.getElementById('syncStatus').textContent = 'Syncing to cloud...';
+
+fetch('https://waste-log-api.onrender.com/api/sync', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(syncPayload)
+})
+.then(response => response.json())
+.then(data => {
+  document.getElementById('syncStatus').textContent = '✓ Synced to Neon!';
+  setTimeout(() => document.getElementById('syncStatus').textContent = '', 2000);
+  
+  // Instantly fetch the updated logs from the database to refresh the dashboard
+  fetchLogsFromDatabase();
+})
+.catch(err => {
+  console.error('Cloud sync error:', err);
+  document.getElementById('syncStatus').textContent = '⚠ Sync failed. Check connection.';
+});
 
 function renderEntries() {
   const filter = document.getElementById('filterDay').value;
