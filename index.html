@@ -353,24 +353,22 @@ let currentShift = SHIFTS[0];
 /* ---------- INIT ---------- */
 function init() {
   document.getElementById('todayDate').textContent = new Date().toLocaleDateString();
-  
-  if (store.users.length === 0) {
-    // Initial setup state
-    document.getElementById('tabLogin').style.display = 'none';
-    setAuthTab('reg');
-  } else {
-    document.getElementById('tabLogin').style.display = 'block';
-    setAuthTab('login');
-  }
+
+  // Always show both tabs so users can log in or register from any browser
+  document.getElementById('tabLogin').style.display = 'block';
+  setAuthTab('login'); // Default to login screen
 
   // Pre-fill auth fields grid
   const rgFields = document.getElementById('rgFields');
-  rgFields.innerHTML = CATS.map(c => 
-    `<div class="fieldchk" id="fc_${c.key}" onclick="toggleField('${c.key}')">
-      <div class="fdot" style="background:${c.color}"></div>${c.key}
-     </div>`
-  ).join('');
+  if (rgFields) {
+    rgFields.innerHTML = CATS.map(c => `
+      <div class="fieldchk" id="fc_${c.key}" onclick="toggleField('${c.key}')">
+        <div class="fdot" style="background:${c.color}"></div>${c.key}
+      </div>
+    `).join('');
+  }
 
+  // Check active session
   if (sessionStorage.getItem('wl_user')) {
     currentUser = store.users.find(u => u.username === sessionStorage.getItem('wl_user'));
     if (currentUser) return showApp();
