@@ -404,15 +404,29 @@ function toggleMgr(e) {
   if(e.target !== cb) cb.checked = !cb.checked;
 }
 
-function doLogin() {
-  const u = document.getElementById('liUser').value.trim();
-  const p = document.getElementById('liPass').value;
-  const user = store.users.find(x => x.username === u && x.pass === p);
-  if (!user) return document.getElementById('liErr').textContent = 'Invalid username or password';
+async function doLogin() {
+  const username = document.getElementById('liUser').value.trim();
+  const password = document.getElementById('liPass').value;
   
-  currentUser = user;
-  sessionStorage.setItem('wl_user', user.username);
-  showApp();
+  try {
+    const response = await fetch('https://waste-log-api.onrender.com/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    
+    const data = await response.json();
+    if (data.success) {
+      currentUser = data.user;
+      sessionStorage.setItem('wl_user', data.user.username);
+      showApp();
+    } else {
+      document.getElementById('liErr').textContent = data.error || 'Invalid username or password';
+    }
+  } catch (err) {
+    console.error('Login error:', err);
+    document.getElementById('liErr').textContent = 'Server connection error';
+  }
 }
 
 function doRegister() {
