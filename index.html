@@ -350,31 +350,38 @@ let currentCat = 'Kitchen';
 let currentReason = REASONS[0];
 let currentShift = SHIFTS[0];
 
-/* ---------- INIT ---------- */
+/* ---------- INIT & AUTH ---------- */
 function init() {
   document.getElementById('todayDate').textContent = new Date().toLocaleDateString();
 
-  // Always show both tabs so users can log in or register from any browser
-  document.getElementById('tabLogin').style.display = 'block';
-  setAuthTab('login'); // Default to login screen
-
-  // Pre-fill auth fields grid
-  const rgFields = document.getElementById('rgFields');
-  if (rgFields) {
-    rgFields.innerHTML = CATS.map(c => `
-      <div class="fieldchk" id="fc_${c.key}" onclick="toggleField('${c.key}')">
-        <div class="fdot" style="background:${c.color}"></div>${c.key}
-      </div>
-    `).join('');
+  // 1. Check if user is already logged in from a previous session
+  const savedUser = localStorage.getItem('waste_session');
+  if (savedUser) {
+    try {
+      currentUser = JSON.parse(savedUser);
+      document.getElementById('authScreen').classList.add('hidden');
+      document.getElementById('appScreen').classList.remove('hidden');
+      setupAppForUser();
+      return;
+    } catch (e) {
+      localStorage.removeItem('waste_session');
+    }
   }
 
-  // Check active session
-  if (sessionStorage.getItem('wl_user')) {
-    currentUser = store.users.find(u => u.username === sessionStorage.getItem('wl_user'));
-    if (currentUser) return showApp();
+  // 2. Default to login screen if no saved session
+  document.getElementById('authScreen').classList.remove('hidden');
+  document.getElementById('appScreen').classList.add('hidden');
+  setAuthTab('login');
+
+  // Build category toggles for registration if empty
+  const rgFields = document.getElementById('rgFields');
+  if (rgFields && rgFields.children.length === 0) {
+    CATS.forEach(c => {
+      rgFields.innerHTML += `<div class="fieldchk" id="fc_${c.key}" onclick="toggleField('${c.key}')">
+        <div class="fdot" style="background:${c.color}"></div>${c.key}</div>`;
+    });
   }
 }
-
 async function fetchLogsFromDatabase() {
   try {
     const res = await fetch('https://waste-log-api.onrender.com/api/logs');
@@ -433,7 +440,7 @@ async function doLogin() {
   const user = document.getElementById('liUser').value.trim().toLowerCase();
   const pass = document.getElementById('liPass').value;
   const errEl = document.getElementById('liErr');
-  
+
   if (!user || !pass) return errEl.textContent = "Please enter both username and password.";
 
   errEl.style.color = "var(--muted)";
@@ -449,16 +456,25 @@ async function doLogin() {
     const data = await res.json();
 
     if (res.ok) {
-      // User found in Neon!
+      let userFields = [];
+      try {
+        userFields = typeof data.fields === 'string' ? JSON.parse(data.fields) : (data.fields || []);
+      } catch (e) { userFields = []; }
+
       currentUser = {
         name: data.name,
         username: data.username,
-        isMgr: data.is_manager,
-        fields: typeof data.fields === 'string' ? JSON.parse(data.fields) : (data.fields || [])
+        isMgr: Boolean(data.is_manager),
+        fields: userFields
       };
 
-      document.getElementById('authScreen').style.display = 'none';
-      document.getElementById('appScreen').style.display = 'block';
+      // Save user session so browser refreshes keep you logged in
+      localStorage.setItem('waste_session', JSON.stringify(currentUser));
+
+      // Remove .hidden class properly so CSS !important doesn't block rendering
+      document.getElementById('authScreen').classList.add('hidden');
+      document.getElementById('appScreen').classList.remove('hidden');
+
       setupAppForUser();
     } else {
       errEl.style.color = "var(--bad)";
@@ -467,10 +483,9 @@ async function doLogin() {
   } catch (err) {
     console.error("Login fetch error:", err);
     errEl.style.color = "var(--bad)";
-    errEl.textContent = "Server connection error. (If server was sleeping, try again in 10s)";
+    errEl.textContent = "Server connection error.";
   }
 }
-
 async function doRegister() {
   const name = document.getElementById('rgName').value.trim();
   const user = document.getElementById('rgUser').value.trim().toLowerCase();
@@ -510,11 +525,11 @@ async function doRegister() {
 }
 function logout() {
   currentUser = null;
-  sessionStorage.removeItem('wl_user');
-  document.getElementById('appScreen').classList.add('hidden');
+  localStorage.removeItem('waste_session');
   document.getElementById('authScreen').classList.remove('hidden');
+  document.getElementById('appScreen').classList.add('hidden');
   document.getElementById('userMenu').classList.add('hidden');
-  setAuthTab('login');
+  document.getElementById('liPass').value = '';
 }
 
 /* ---------- APP LOGIC ---------- */
