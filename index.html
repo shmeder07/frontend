@@ -159,16 +159,29 @@
       </div>
       <div class="spacer"></div>
       <label>Your field(s) — pick all that apply</label>
-      <div class="fieldgrid" id="rgFields"></div>
-      <div class="mgr" id="rgMgrWrap" onclick="toggleMgr(event)">
-        <input type="checkbox" id="rgMgr" onclick="event.stopPropagation()">
-        <span>Manager — full access: all fields, dashboard, staff &amp; costs</span>
+      <div class="fieldgrid" id="rgFields">
+        <div class="fieldchk" id="fc_Kitchen" onclick="toggleField('Kitchen')">
+          <div class="fdot" style="background:var(--kitchen)"></div>Kitchen
+        </div>
+        <div class="fieldchk" id="fc_Bar" onclick="toggleField('Bar')">
+          <div class="fdot" style="background:var(--bar)"></div>Bar
+        </div>
+        <div class="fieldchk" id="fc_Glassware" onclick="toggleField('Glassware')">
+          <div class="fdot" style="background:var(--glass)"></div>Glassware
+        </div>
+        <div class="fieldchk" id="fc_Silverware" onclick="toggleField('Silverware')">
+          <div class="fdot" style="background:var(--silver)"></div>Silverware
+        </div>
+        <div class="fieldchk" id="fc_Server" onclick="toggleField('Server')">
+          <div class="fdot" style="background:var(--server)"></div>Server
+        </div>
+        <div class="fieldchk" id="fc_Housekeeping" onclick="toggleField('Housekeeping')">
+          <div class="fdot" style="background:var(--house)"></div>Housekeeping
+        </div>
       </div>
       <button class="primary" onclick="doRegister()">Create Account</button>
       <div class="err" id="rgErr"></div>
     </div>
-  </div>
-</div>
 
 <!-- ================= APP SCREEN ================= -->
 <div id="appScreen" class="hidden">
@@ -365,15 +378,6 @@ function init() {
 
   document.getElementById('authScreen').classList.remove('hidden');
   document.getElementById('appScreen').classList.add('hidden');
-  
-  const rgFields = document.getElementById('rgFields');
-  if (rgFields && rgFields.children.length === 0) {
-    CATS.forEach(c => {
-      rgFields.innerHTML += `<div class="fieldchk" id="fc_${c.key}" onclick="toggleField('${c.key}')">
-        <div class="fdot" style="background:${c.color}"></div>${c.key}</div>`;
-    });
-  }
-
   setAuthTab('login');
 }
 
@@ -454,12 +458,14 @@ async function doRegister() {
   const name = document.getElementById('rgName').value.trim();
   const user = document.getElementById('rgUser').value.trim().toLowerCase();
   const pass = document.getElementById('rgPass').value;
-  const isMgr = document.getElementById('rgMgr').checked;
-  const fields = CATS.filter(c => document.getElementById(`fc_${c.key}`).classList.contains('on')).map(c => c.key);
+  const fields = CATS.filter(c => {
+    const el = document.getElementById(`fc_${c.key}`);
+    return el && el.classList.contains('on');
+  }).map(c => c.key);
   const errEl = document.getElementById('rgErr');
 
   if (!name || !user || !pass) return errEl.textContent = "Fill all required fields.";
-  if (!isMgr && fields.length === 0) return errEl.textContent = "Select at least one field.";
+  if (fields.length === 0) return errEl.textContent = "Select at least one field.";
 
   errEl.style.color = "var(--muted)";
   errEl.textContent = "Submitting request to database...";
@@ -468,7 +474,7 @@ async function doRegister() {
     const res = await fetch(`${API_BASE}/users/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, username: user, password: pass, is_manager: isMgr, fields })
+      body: JSON.stringify({ name, username: user, password: pass, is_manager: false, fields })
     });
 
     const data = await res.json();
