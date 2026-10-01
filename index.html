@@ -149,7 +149,7 @@
     </div>
 
     <!-- REGISTER -->
-    <div id="regForm" class="hidden">
+    <div id="regForm" style="display:none;">
       <label>Your name (as it appears on entries)</label>
       <input id="rgName" placeholder="e.g. Audrey P.">
       <div class="spacer"></div>
@@ -365,8 +365,7 @@ function init() {
 
   document.getElementById('authScreen').classList.remove('hidden');
   document.getElementById('appScreen').classList.add('hidden');
-  setAuthTab('login');
-
+  
   const rgFields = document.getElementById('rgFields');
   if (rgFields && rgFields.children.length === 0) {
     CATS.forEach(c => {
@@ -374,14 +373,25 @@ function init() {
         <div class="fdot" style="background:${c.color}"></div>${c.key}</div>`;
     });
   }
+
+  setAuthTab('login');
 }
 
 function setAuthTab(tab) {
-  document.getElementById('tabLogin').classList.toggle('on', tab==='login');
-  document.getElementById('tabReg').classList.toggle('on', tab==='reg');
-  document.getElementById('loginForm').style.display = tab==='login' ? 'block' : 'none';
-  document.getElementById('regForm').style.display = tab==='reg' ? 'block' : 'none';
-  document.getElementById('authSub').textContent = tab==='login' ? 'Sign in to start logging' : 'Set up your access pin';
+  const isLogin = (tab === 'login');
+  document.getElementById('tabLogin').classList.toggle('on', isLogin);
+  document.getElementById('tabReg').classList.toggle('on', !isLogin);
+  
+  const loginForm = document.getElementById('loginForm');
+  const regForm = document.getElementById('regForm');
+  
+  loginForm.classList.remove('hidden');
+  regForm.classList.remove('hidden');
+
+  loginForm.style.display = isLogin ? 'block' : 'none';
+  regForm.style.display = isLogin ? 'none' : 'block';
+  
+  document.getElementById('authSub').textContent = isLogin ? 'Sign in to start logging' : 'Set up your access pin';
   document.getElementById('liErr').textContent = '';
   document.getElementById('rgErr').textContent = '';
 }
@@ -559,7 +569,6 @@ function setCat(key) {
 function filterItems() {
   const q = (document.getElementById('itemSearch')?.value || '').toLowerCase();
   
-  // Filter dynamically from Neon items list
   const filtered = dbItems.filter(i => 
     i.category === currentCat && 
     i.name.toLowerCase().includes(q)
