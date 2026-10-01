@@ -106,9 +106,6 @@
     display:flex;align-items:center;gap:8px;font-weight:600;cursor:pointer;font-size:14px}
   .fieldchk.on{border-color:var(--accent);background:#e6f2ea}
   .fieldchk .fdot{width:11px;height:11px;border-radius:50%}
-  .mgr{display:flex;align-items:center;gap:10px;background:var(--panel2);border:1px solid var(--line);
-    border-radius:12px;padding:12px;margin-top:10px;cursor:pointer;font-size:14px;font-weight:600}
-  .mgr input{width:20px;height:20px}
   .primary{width:100%;background:var(--accent);color:#fff;border:none;border-radius:12px;
     padding:16px;font-size:16px;font-weight:800;margin-top:16px;cursor:pointer}
   .err{color:var(--bad);font-size:13px;margin-top:10px;min-height:16px;text-align:center}
@@ -182,6 +179,8 @@
       <button class="primary" onclick="doRegister()">Create Account</button>
       <div class="err" id="rgErr"></div>
     </div>
+  </div>
+</div>
 
 <!-- ================= APP SCREEN ================= -->
 <div id="appScreen" class="hidden">
@@ -324,6 +323,7 @@
     </div>
   </div>
 </dialog>
+</div>
 
 <script>
 /* ---------- CONSTANTS ---------- */
@@ -341,19 +341,9 @@ const CAT_COLOR = {Kitchen:'var(--kitchen)',Bar:'var(--bar)',Glassware:'var(--gl
 const REASONS = ['Broke','Spoiled','Over-portioned','Comped','Expired','Spill','Other'];
 const SHIFTS = ['AM', 'PM'];
 
-// MASTER ITEM SEED PAYLOAD
-const DEFAULT_ITEMS = {
-  Kitchen:[['Purity flour 5.5lb',1.06],['Maseca flour',8.55],['Whole wheat flour 5lb',7.75],['Rice flour',7.95],['White Sugar',0.96],['Brown sugar',0.85],['Granny\'s Reg Rice',3.8],['Goya Valencia Rice 12oz',10.5],['Sushi rice',13],['Arborio rice',10.5],['Kosher salt',11.95],['White paper towel 12',4.04],['White vinegar',5.35],['Maxwell coffe 3lb',57.72],['Sysco Mayo',36.95],['Dijon Mustard 8oz',14.5],['Global chef Pancake Syrup 1Gallon',31.95],['Whole peel tomato 6.10lb',20.3],['Tomato ketchup',22.85],['Tomato paste 8oz',9.95],['Fortina Cocnut powder',32.63],['Baking powder',4.8],['White Sesame seed',15.34],['Curry powder',18.75],['Badia Oregano 5.5oz',11.95],['Paprika 16oz',19.95],['Chine panko 5lb',8.39],['Corn starch 1lb',3.7],['Xanthan Gum 1oz',27.95],['Hondashi 4.23oz',20.75],['Instant yeast 1lb',11.5],['Tapioca pearls',5.95],['Yellow corn popcorn 1lb',4.95],['Elbow pasta 1lb',2],['coconut Milk Powder 1box 12pk',2.18],['Pork fat',3],['Tahini 1lb',26.7],['Sweet condensed milk 14oz',4.95],['Caramel sauce in can',4.95],['GraceCoconut milk 400ml',5.43],['Chipotle Adobados 220g',10.75],['Sweet soy sauce 296',12.95],['La choy Soy sauce 1 gallon',63.04],['Crisco vegetble shorteninf 3lb',45.48],['Clear Fry Shortening Marina 35lb',105.06],['Vegetable oil 35lb',81.96],['Vergine olvie oil 3 litter',120.3],['Seasame oil 56oz',47.27],['Pam spray 1.1lbs',11.58],['Malher chicken consome 908g',11.01],['Ancho chili 6oz',21.25],['Capers 32oz',22.48],['Marie sharp pepper sauce 1gallon',38.06],['Red wine 1 Quart',15],['White Wine 1 quart',15],['55 Gallon Garbage bag',59.95],['zip lock 1 Gallon',20.3],['zip lock quarter',16.35],['Small snack zip lock',12.95],['Plastic wrap 18*200',62.25],['Foil 18*200',196.91],['Red onion',3],['yellow onion',2.5],['White onion',2.5],['Shallots',17],['chives',3.5],['Scallonis',3.75],['Tomatos',3.6],['tomatillo',7],['Cherry tomatos',9.5],['Sweet pepper',5.5],['Red bell pepepr',9],['Jalapeno',7],['Habanero',7],['Chilli pablano',11],['Cilantro',11],['leeks',11],['Parsley',8.5],['Dill',15],['Spinach',8],['Thyme',3],['Rosemarry',5],['Cucumber',1.25],['Dirty potatos',3],['Green beans',7],['Asparagus',20],['Beets',2.9],['Cauliflower',4],['Ginger',2.75],['Radish',5],['Mushroom',7.5],['Sweet corn',8],['Garlic',2.25],['Cellery',6],['Carrots',2.5],['Avocado',3],['Purple Cabbage',3],['White Cabbage',2.24],['Coco',2.8],['Banana leaf',3],['Green plantain',0.5],['Ripe Plantain',0.5],['Cassava',1.75],['Egge plant',4],['Strawberry',17],['Blue berry',11],['Papaya',6],['Mango imported',3.5],['Melon',2.5],['Pineapple local',4.5],['Imported pineapple',7.75],['Watermelon',1],['Imported orange',4.5],['Passion fruit',1.25],['Tangarin',2.75],['Red apple',2.25],['Green apple',2],['Pear',2.5],['Lime',0.75],['Lemon',2.5],['Grape fruit imported',3],['Mint',3],['Romaine lettuce',5.5],['Mexican Romaine',7],['Bibe lettuce',5.5],['Coconute',2.5],['Coconute oil',18.5],['Pork oil',5],['Black beans',5],['pinto beans',6],['banana',1],['Basil 4oz',5],['Kale',8],['Peanuts',9],['Fish Trimings',18],['Fish wings',18],['Whole fish',18],['Shrimp Jumbo',25],['Conch',12],['Whole lobster',25],['Cook lobster',25],['Snapper fillet',18],['Groupper Fillet',18],['Jack fillet',16],['Fish head',18],['Octopus',19],['Cook octopus',19],['Scallops',42],['Escoler fish',16],['Local tuna',16],['Tuna loin',35],['Taco portion',18],['Salmone',35],['Arroz portion',18],['Skweres',18],['Fish&chips',18],['Catch portion',18],['Home made Fries',6],['Cook black Beans',5],['Cook red beans',5],['black Beans puree',6],['Lamb',8],['Bacon pices',16],['Edamami',11.85],['Seaweed',48],['Cooked Bacon',16],['Mole verde',5.6],['Dry coconut',2.5],['pork Carnitas',8.5],['Pork belly',16],['Frozzen Strawberry',18],['Mango puree',3.5],['Hash brown',2],['Beef patty 18*20',18],['Cook Beef ribs',8.8],['Neck&Back',1.28],['Whole chicken',2.9],['Roasted chicken',90],['French fries',16.41],['Tomato Past',9.95],['Stone crab',25],['Italion sausage',8.5],['Chorizo',13.01],['Pig Foot/ pig head',5.85],['Chorriso',13.01],['Lobster',25],['Cooke octopus',0.23],['Catch',18],['Yellow corn toritlla',2.5],['Sushi ginger 12oz',12.95],['Beef patty',18],['Snapper portation',18],['Grouper',18],['Condence milk',4.25],['Flour totilla',3.5],['Cheese Mozarella 5lb',11.05],['Parmessan cheese',19.59],['Philadephia cheese 8oz',15.95],['Yellow cheddar chesse',1.64],['eggs',9.25],['Amirian cheese 9.2oz ( 16 slice)',4.95],['Hersheys chocolate chip 15oz',13.95],['coconut flakes 7oz',8.95],['Feta chhese 6oz',14.95],['Ricotta chesse 15oz',11.95],['Plane yogurt',12],['Greek yogurt 1 quart',30],['Sour cream 5lb',10.95],['Unsalted butter anchor',16],['Heavy cream 1 quart',24.25],['Lala light 1 quart',3.84],['Elbow pasta prep',2],['Arroz prep 12oz',1.75],['Rissoto rice 12oz',10.5],['Badia Wholw black pepper 160z',24.95],['Ground Black pepper 16oz',22.95],['Badia paprika 16oz',19.95],['Badia Bay leave 1.5oz',12.95],['Badia thyme 8oz',13.75],['Badia black sesame seed 16oz',15.95],['Spice Classes onion powder 16oz',17.95],['Mc White sesame seed 16oz',14.95],['Global chef Fennel seed 12oz',10.44],['Badia Ground tumeric 7oz',9.95],['Dill weed dry',8.25],['Chili powder 16oz',20.95],['Mustard seed 24oz',16.8],['Anise seed 7oz',32.2],['Cumin powder 16oz',16.95],['Gamram masala 16oz',33.95],['Cinnamon powder 16oz',22.25],['Garlic powder 16oz',20.95],['Star anise 7oz',37.75],['Nutmeg 16oz',36.95],['Pumpking pie spice 2oz',4.6],['Oregano 0.5oz',4.95],['Cardamon 1.75oz',15.25],['Kosher salt 1lb',10.5],['All spaice 16oz',21.95],['Badia Crush pepper flakes 12oz',16.95],['Light corn syrup',14.5],['Black truffle oil 3.38oz',39.25],['White truffle oil',39.25],['Vanilla etxtrac',13.95],['White rum 1Litter',24],['Balsamic Vinegar',13.95],['Tahini',26.7],['Table salt',2],['Sho chka bai vinegar',59.95],['Quina',54.95],['Green lentins',16.25],['Pinenuts',78.25],['Pecans',74.95],['Almones',59.95],['Black Recado',10.15],['Red recado',10.15],['Ambersia sesame oil',45.69],['Toastadas chips',2.5],['Tortilla straws',2.5]],
-  Bar:[['Bacardi Carta Blanca',86],['Bacardi Gran Anejo',86],['Belizean Blue',125.71],['Don Omarios',125.71],['Copalli Barrel Rested',84.57],['Copalli Cacao Organic',84.57],['Copalli Organic White',78.85],['Zacapa',211],['Captain Morgan',104],['Flor De Cana 7 single estate',108.57],['Flor De Cana 12 years',146],['Havana Club',73],['Old Master',25],['Caribbean White',21],['Caribbean White (elephant foot)',21],['Caribbean Gold',21],['Caribbean Gold (elephant foot)',21],['Coconut Rum Caribbean',34],['Coconut Rum Elephant Foot Crystal',56],['Absolute Vodka',93.71],['Ketel One',137.14],['Grey Goose',131.42],['Titos',113],['Titos Elephant Foot',113],['Tanqueray London Dry',108.57],['Bulldog Gin',113],['Hendricks',157],['Baron Gin',22],['Jose Cuervo Gold',70],['1800 Silver',85.71],['Casa Amigos Blanco',211.42],['Casa Amigos Anejo',248],['Don Julio Blanco',184],['Don Julio Reposado',172.5],['Clase Azul',1028.57],['Patron Silver',142.85],['Patron Anejo',160],['Patron Reposado',160],['Zignum Reposado',120],['Buchanans Deluxe',160],['Chivas Regal',132],['Macallan',213],['Bulleit Bourbon',151],['Bulleit Bourbon Rye',165.71],['Johnnie Walker Black Label',140],['Johnnie Walker Blue Label',634],['Jameson',122],['The Glenlivet',173],['Glenfiddich 12',162],['Gentleman Jack',156],['Woodford Reserve',173],['Crown Royal',141.7],['Licor 43',124],['Aperol',99.42],['Cinzano Extra Dry',43],['Cinzano Rosso Sweet Vermouth',43],['Frangelico',120],['Campari',43],['Baileys',130],['Kahlua',112],['Grand Marnier',145],['Disaronno',130],['Apricot Brandy',96],['Jagermeister',108],['Fireball',100.57],['Pisco Jimenez Acholado',80],['Pama Pomegranate Liqueur',139],['St. Germain',139.42],['Dekuyper Peppermint',89],['Hennessy VS',225],['Monin Pomegranate syrup',26.9],['Monin Passion Fruit syrup',26.9],['Monin Coconut syrup',26.9],['Orelle Cabernet Medium Sweet',40],['Bessan Chateau (red)',43.56],['Dinastico IL Palazzo',52.44],['Santalba Rioja Tempranillo',33.14],['Maison Castel Cabernet',34],['Ruta 5 Cabernet (sangria)',28.12],['Vu Manent Malbec',42.75],['REIGN Merlot Napa Valley',168.75],['Maison Castel Chardonnay',34],['Cavalier Grenache Rose',41.56],['Orelle Rose',37.78],['Zonin Ventiterre Pinot Grigio',22.22],['Zonin Pinot Grigio',39.37],['Vu Manent Sauvignon Blanc',38],['RIPPEY Sauvignon Blanc Napa Valley',73.12],['Bordeaux Chateau Haut Bastor',52.44],['Klinker Brick Albarino',56.25],['SIP Moscato 2022 California',56.25],['Zonin Prosecco',42],['Deccolio Prosecco',43.56],['Pignoletto Brut',41.56],['Etre Vu Da Verse Brut',73.12],['Donelli Lambrusco',34.09],['G.Gobillard Brut',113.14],['G.Gobillard Rose',170.28],['G.Gobillard Blanc de Blanc',147.42],['Belikin Lager',2.25],['Belikin Stout',2.25],['Heineken',3.75],['Red Stripe',4.58],['Land Shark',2.67],['Heineken 0% Alcohol',4],['Becks Blue non alcoholic',3.05],['Coke Zero',0.96],['Soda Water',0.96],['Coke',0.96],['Sprite',0.96],['Ginger Fanta',0.96],['Tonic Water',0.79],['Crystal Water 500ml',1],['Fiji Water',4.58],['Ginger Beer',4.96],['Perrier Sparkling',5.08]],
-  Glassware:[['Wine glass',3],['Pint glass',2.2],['Rocks glass',2],['Champagne flute',3.5],['Water tumbler',1.8],['Coffee mug',2.5],['Carafe',5]],
-  Silverware:[['Dinner fork',1.5],['Dinner knife',1.8],['Soup spoon',1.4],['Teaspoon',1.1],['Steak knife',3],['Serving spoon',2.5],['Side plate',2.2]],
-  Server:[['To-go container',0.35],['To-go bag',0.15],['Paper napkins (bundle)',0.6],['Straws (box)',1.2],['Condiment cups',0.1],['Coffee (pot)',1.5],['Iced tea (batch)',1],['Butter ramekin',0.2]],
-  Housekeeping:[['Bleach (gal)',3.0],['Hand soap refill',4.5],['Toilet paper (roll)',0.6],['Paper towels (roll)',1.5],['Trash bags (box)',5.0],['Mop head',6.0],['Broom',12.0]]
-};
-
 /* ---------- STATE ---------- */
-let dbItems = []; // Populated dynamically from Neon
-let liveLogs = []; // Populated dynamically from Neon
+let dbItems = [];
+let liveLogs = [];
 let currentUser = null;
 let currentCat = 'Kitchen';
 let currentReason = REASONS[0];
@@ -367,10 +357,12 @@ function init() {
   if (savedUser) {
     try {
       currentUser = JSON.parse(savedUser);
-      document.getElementById('authScreen').classList.add('hidden');
-      document.getElementById('appScreen').classList.remove('hidden');
-      setupAppForUser();
-      return;
+      if (currentUser && currentUser.name) {
+        document.getElementById('authScreen').classList.add('hidden');
+        document.getElementById('appScreen').classList.remove('hidden');
+        setupAppForUser();
+        return;
+      }
     } catch (e) {
       localStorage.removeItem('waste_session');
     }
@@ -388,9 +380,6 @@ function setAuthTab(tab) {
   
   const loginForm = document.getElementById('loginForm');
   const regForm = document.getElementById('regForm');
-  
-  loginForm.classList.remove('hidden');
-  regForm.classList.remove('hidden');
 
   loginForm.style.display = isLogin ? 'block' : 'none';
   regForm.style.display = isLogin ? 'none' : 'block';
@@ -400,10 +389,9 @@ function setAuthTab(tab) {
   document.getElementById('rgErr').textContent = '';
 }
 
-function toggleField(key) { document.getElementById(`fc_${key}`).classList.toggle('on'); }
-function toggleMgr(e) {
-  const cb = document.getElementById('rgMgr');
-  if(e.target !== cb) cb.checked = !cb.checked;
+function toggleField(key) {
+  const el = document.getElementById(`fc_${key}`);
+  if (el) el.classList.toggle('on');
 }
 
 async function doLogin() {
@@ -505,6 +493,8 @@ function logout() {
 
 /* ---------- APP SETUP & DATA FETCHING ---------- */
 function setupAppForUser() {
+  if (!currentUser) return;
+
   document.getElementById('restName').textContent = 'Akasha Restaurant';
   document.getElementById('setupBtn').style.display = currentUser.isMgr ? 'block' : 'none';
   document.getElementById('btn-reports').style.display = currentUser.isMgr ? 'block' : 'none';
@@ -593,7 +583,7 @@ function filterItems() {
 
 function updateCostFromItem() {
   const sel = document.getElementById('item');
-  if(sel.options.length > 0 && sel.value !== "0") {
+  if(sel && sel.options.length > 0 && sel.value !== "0") {
     document.getElementById('cost').value = parseFloat(sel.value).toFixed(2);
   } else {
     document.getElementById('cost').value = "0.00";
@@ -616,18 +606,20 @@ function calcTotal() {
   document.getElementById('lineTotal').textContent = `$${(q * c).toFixed(2)}`;
 }
 
-function buildChips(containerId, list, selected, callback) {
-  const html = list.map(item => `<div class="chip ${item===selected?'sel':''}" onclick="${callback.name}('${item}')">${item}</div>`).join('');
-  document.getElementById(containerId).innerHTML = html;
+function buildChips(containerId, list, selected, callbackName) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  const html = list.map(item => `<div class="chip ${item===selected?'sel':''}" onclick="${callbackName}('${item}')">${item}</div>`).join('');
+  container.innerHTML = html;
 }
 
-function setReason(r) { currentReason = r; buildChips('reasons', REASONS, currentReason, setReason); }
-function setShift(s) { currentShift = s; buildChips('shifts', SHIFTS, currentShift, setShift); }
+function setReason(r) { currentReason = r; buildChips('reasons', REASONS, currentReason, 'setReason'); }
+function setShift(s) { currentShift = s; buildChips('shifts', SHIFTS, currentShift, 'setShift'); }
 function toggleMenu() { document.getElementById('userMenu').classList.toggle('hidden'); }
 
 async function logEntry() {
   const sel = document.getElementById('item');
-  const itemName = sel.options.length > 0 ? sel.options[sel.selectedIndex].text : '';
+  const itemName = sel && sel.options.length > 0 ? sel.options[sel.selectedIndex].text : '';
   if(!itemName || itemName === 'No items found in database...') return alert("Select a valid item.");
 
   const q = parseInt(document.getElementById('qty').value) || 1;
@@ -761,36 +753,9 @@ function updateSummary(filteredList = liveLogs) {
 }
 
 /* ---------- MANAGER ACTIONS ---------- */
-async function seedDatabaseItems() {
-  const msgEl = document.getElementById('seedMsg');
-  if(!confirm("Are you sure you want to seed all default items into Neon? This will refresh your items table.")) return;
-
-  msgEl.style.color = 'var(--warn)';
-  msgEl.textContent = 'Seeding items to Neon...';
-
-  try {
-    const res = await fetch(`${API_BASE}/seed-items`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ customItems: DEFAULT_ITEMS })
-    });
-
-    const data = await res.json();
-    if (res.ok) {
-      msgEl.style.color = 'var(--good)';
-      msgEl.textContent = '✓ All items successfully uploaded to Neon!';
-      await fetchItemsFromCloud();
-    } else {
-      throw new Error(data.error || 'Failed to seed');
-    }
-  } catch (e) {
-    msgEl.style.color = 'var(--bad)';
-    msgEl.textContent = '✗ Error: ' + e.message;
-  }
-}
-
 async function loadStaffList() {
   const sl = document.getElementById('staffList');
+  if (!sl) return;
   sl.innerHTML = '<div class="muted">Loading staff...</div>';
   try {
     const res = await fetch(`${API_BASE}/users`);
@@ -925,7 +890,6 @@ function openSettings() {
 }
 
 function closeSettings() { document.getElementById('settings').close(); }
-
 function saveSettings() { closeSettings(); }
 
 function exportCSV() {
@@ -955,6 +919,7 @@ function exportCSV() {
 
 function loadReports() {
   const tbody = document.getElementById('report-body');
+  if (!tbody) return;
   tbody.innerHTML = '';
   
   const grouped = {};
