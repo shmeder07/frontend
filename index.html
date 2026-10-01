@@ -24,7 +24,7 @@
   .rest{font-size:12px;color:var(--muted);margin-top:2px}
   .who{display:flex;align-items:center;gap:8px}
   .badge{background:var(--panel2);border:1px solid var(--line);border-radius:999px;
-    padding:6px 12px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:7px}
+    padding:6px 12px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:7px;cursor:pointer}
   .badge .fdot{width:9px;height:9px;border-radius:50%}
   .iconbtn{background:var(--panel2);border:1px solid var(--line);color:var(--text);
     border-radius:10px;padding:8px 12px;font-size:13px;font-weight:600;cursor:pointer}
@@ -62,7 +62,8 @@
     padding:18px;font-size:18px;font-weight:800;margin-top:6px;cursor:pointer;
     box-shadow:0 6px 18px rgba(31,110,67,.28)}
   .logbtn:active{transform:translateY(1px)}
-  .syncline{text-align:center;font-size:12px;margin-top:10px;font-weight:600;min-height:15px}
+  .logbtn:disabled{background:var(--muted);box-shadow:none;cursor:not-allowed}
+  .syncline{text-align:center;font-size:12px;margin-top:10px;font-weight:600;min-height:15px; color:var(--muted)}
   .summary{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:4px}
   .stat{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px}
   .stat .n{font-size:22px;font-weight:800}
@@ -74,7 +75,7 @@
   .entry .mid .t{font-weight:600;font-size:15px}
   .entry .mid .s{font-size:12px;color:var(--muted);margin-top:2px}
   .entry .amt{font-weight:700;font-size:15px;white-space:nowrap}
-  .entry .del{color:var(--muted);background:none;border:none;font-size:18px;padding:4px 6px;cursor:pointer}
+  .entry .del{color:var(--bad);background:none;border:none;font-size:18px;padding:4px 6px;cursor:pointer; font-weight:bold}
   .bar-actions{position:fixed;left:0;right:0;bottom:0;background:linear-gradient(0deg,#ffffff,rgba(255,255,255,.85));
     border-top:1px solid var(--line);padding:12px 16px;display:flex;gap:10px;z-index:20}
   .bar-actions .iconbtn{flex:1;text-align:center;padding:14px}
@@ -87,10 +88,6 @@
     justify-content:space-between;align-items:center;font-weight:700;font-size:17px}
   .dlg-b{padding:16px;max-height:72vh;overflow:auto}
   .dlg-b h3{font-size:13px;text-transform:uppercase;color:var(--muted);letter-spacing:.5px;margin:18px 0 8px}
-  .itemrow{display:grid;grid-template-columns:1fr 90px 34px;gap:8px;margin-bottom:8px;align-items:center}
-  .itemrow input{padding:10px;font-size:14px}
-  .addbtn{background:var(--panel2);border:1px dashed var(--line);color:var(--accent);
-    border-radius:10px;padding:10px;width:100%;font-weight:600;cursor:pointer}
   .flex{display:flex;gap:10px}.flex>*{flex:1}
   .note{background:#e9f4ed;border:1px solid #cfe3d5;border-radius:10px;padding:10px 12px;
     font-size:12.5px;color:#245c3c;margin-top:10px}
@@ -179,13 +176,15 @@
   <div class="title">
     <div>
       <h1>Waste<span>Log</span></h1>
-      <div class="rest" id="restName"></div>
+      <div class="rest" id="restName">Akasha Restaurant</div>
     </div>
     <div class="who">
       <span class="badge" id="userBadge" onclick="toggleMenu()"></span>
     </div>
   </div>
-  <div class="menu hidden" id="userMenu"></div>
+  <div class="menu hidden" id="userMenu">
+    <button onclick="logout()">Log out</button>
+  </div>
 </header>
 
 <main>
@@ -236,7 +235,7 @@
       <span class="big" id="lineTotal">$0.00</span>
     </div>
     <button class="logbtn" id="logBtn" onclick="logEntry()">＋ Log Waste</button>
-    <div class="syncline" id="syncStatus"></div>
+    <div class="syncline" id="syncStatus">Connected to cloud</div>
   </div>
 
   <!-- TODAY SUMMARY -->
@@ -251,8 +250,8 @@
 
   <!-- ENTRIES -->
   <div class="card">
-    <div style="display:flex;justify-content:space-between;align-items:center">
-      <label style="margin:0">Recent entries</label>
+    <div style="display:flex;justify-content:space-between;align-items:center; margin-bottom:8px;">
+      <label style="margin:0">Recent entries (Live)</label>
       <select id="filterDay" onchange="renderEntries()" style="width:auto;padding:8px 10px;font-size:13px">
         <option value="today">Today</option>
         <option value="all">All Time</option>
@@ -283,9 +282,7 @@
           <th style="padding: 10px 4px; color: var(--muted); font-size: 13px; text-transform: uppercase;">Cost ($)</th>
         </tr>
       </thead>
-      <tbody id="report-body">
-        <!-- JS will inject data here -->
-      </tbody>
+      <tbody id="report-body"></tbody>
     </table>
   </div>
 </dialog>
@@ -295,44 +292,43 @@
   <div class="dlg-h"><span>Manager setup</span><button class="iconbtn" onclick="closeSettings()">Done</button></div>
   <div class="dlg-b">
     <h3>Restaurant name</h3>
-    <input id="setRest" placeholder="e.g. The Corner Bistro">
+    <input id="setRest" placeholder="e.g. Akasha Restaurant">
 
-    <h3>Live sync to Server URL</h3>
-    <div class="muted" style="margin-bottom:8px">Paste your backend server API URL. Every item staff log drops into your server automatically. Leave blank to keep this device offline-only.</div>
-    <input id="setSync" autocapitalize="none" placeholder="https://waste-log-api.onrender.com/api/sync">
-    <button class="addbtn" style="margin-top:8px;color:var(--accent)" onclick="testSync()">Send test row →</button>
-    <div id="syncTestMsg" class="muted" style="margin-top:6px"></div>
+    <h3>Database Seeder</h3>
+    <div class="muted" style="margin-bottom:8px">Click below to upload all master menu &amp; inventory items directly into your Neon PostgreSQL database table (`items`).</div>
+    <button class="primary" style="background:var(--warn);margin-top:0;" onclick="seedDatabaseItems()">🌱 Seed Items to Neon Database</button>
+    <div id="seedMsg" class="muted" style="margin-top:6px;text-align:center;font-weight:bold;"></div>
 
-    <h3>Staff accounts</h3>
+    <h3>Staff accounts (In Neon)</h3>
     <div id="staffList"></div>
 
     <div style="height:18px"></div>
     <div class="flex">
-      <button class="iconbtn" style="background:var(--bad);border-color:var(--bad); color:#fff" onclick="wipeToday()">Clear all logs</button>
-      <button class="iconbtn" onclick="saveSettings()" style="background:var(--accent);border-color:var(--accent); color:#fff">Save</button>
+      <button class="iconbtn" onclick="saveSettings()" style="background:var(--accent);border-color:var(--accent); color:#fff">Save Settings</button>
     </div>
-    <div class="note">Accounts &amp; the on-device log are saved on <b>this device</b>. With <b>Live Sync</b> on, every logged item also posts to your server DB in real time.</div>
   </div>
 </dialog>
 
 <script>
-/* ---------- constants ---------- */
+/* ---------- CONSTANTS ---------- */
+const API_BASE = 'https://waste-log-api.onrender.com/api';
+
 const CATS = [
-  {key:'Kitchen',  cls:'k', color:'var(--kitchen)'},
-  {key:'Bar',      cls:'b', color:'var(--bar)'},
-  {key:'Glassware', cls:'g', color:'var(--glass)'},
-  {key:'Silverware',cls:'s', color:'var(--silver)'},
-  {key:'Server',    cls:'sv',color:'var(--server)'},
-  {key:'Housekeeping',cls:'hk',color:'var(--house)'}
+  {key:'Kitchen',     cls:'k',  color:'var(--kitchen)'},
+  {key:'Bar',         cls:'b',  color:'var(--bar)'},
+  {key:'Glassware',   cls:'g',  color:'var(--glass)'},
+  {key:'Silverware',  cls:'s',  color:'var(--silver)'},
+  {key:'Server',      cls:'sv', color:'var(--server)'},
+  {key:'Housekeeping',cls:'hk', color:'var(--house)'}
 ];
 const CAT_COLOR = {Kitchen:'var(--kitchen)',Bar:'var(--bar)',Glassware:'var(--glass)',Silverware:'var(--silver)',Server:'var(--server)',Housekeeping:'var(--house)'};
-const CAT_CLS   = {Kitchen:'k',Bar:'b',Glassware:'g',Silverware:'s',Server:'sv',Housekeeping:'hk'};
 const REASONS = ['Broke','Spoiled','Over-portioned','Comped','Expired','Spill','Other'];
 const SHIFTS = ['AM', 'PM'];
 
+// MASTER ITEM SEED PAYLOAD
 const DEFAULT_ITEMS = {
-  Kitchen:[['Purity flour 5.5lb',1.06],['Maseca flour',8.55],['Whole wheat flour 5lb',7.75],['Rice flour',7.95],['White Sugar',0.96],['Brown sugar',0.85],['Granny\'s Reg Rice',3.8],['Goya Valencia Rice 12oz',10.5],['Sushi rice',13],['Arborio rice',10.5],['Icecream stabilizer',0],['Cure salt',0],['Kosher salt',11.95],['Pink cure salt',0],['To go big plates',0],['To go small plates',0],['2oz to go lid',0],['2oz to go container',0],['White paper towel 12',4.04],['White vinegar',5.35],['Rice Vinegar',0],['Brown paper 1cs12 rolls 350ft',4.04],['Maxwell coffe 3lb',57.72],['Sysco Mayo',36.95],['Dijon Mustard 8oz',14.5],['Honey',0],['Global chef Pancake Syrup 1Gallon',31.95],['Whole peel tomato 6.10lb',20.3],['Tomato ketchup',22.85],['Tomato paste 8oz',9.95],['Fortina Cocnut powder',32.63],['Baking powder',4.8],['Hersheeys cocoa',0],['Nescafe Clasico',0],['Red miso',0],['White Sesame seed',15.34],['Curry powder',18.75],['Badia Oregano 5.5oz',11.95],['Paprika 16oz',19.95],['Raw cocoa beans',0],['Moo Glue',0],['Foam magic',0],['Soy leatin powder',0],['Chine panko 5lb',8.39],['Corn starch 1lb',3.7],['Malted powder milk',0],['Premum Sodium',0],['Glucose powder',0],['Pectin',0],['Xanthan Gum 1oz',27.95],['Pistachio',0],['Hondashi 4.23oz',20.75],['Instant yeast 1lb',11.5],['Tapioca pearls',5.95],['Tapioca flour 16oz',0],['Yellow corn popcorn 1lb',4.95],['Elbow pasta 1lb',2],['coconut Milk Powder 1box 12pk',2.18],['Pork fat',3],['Tahini 1lb',26.7],['Black garlic',0],['Bread crumbs',0],['Sweet condensed milk 14oz',4.95],['Caramel sauce in can',4.95],['Pumking pie mix',0],['GraceCoconut milk 400ml',5.43],['Chipotle Adobados 220g',10.75],['Sweet soy sauce 296',12.95],['La choy Soy sauce 1 gallon',63.04],['Crisco vegetble shorteninf 3lb',45.48],['Clear Fry Shortening Marina 35lb',105.06],['Vegetable oil 35lb',81.96],['Vergine olvie oil 3 litter',120.3],['Seasame oil 56oz',47.27],['Pam spray 1.1lbs',11.58],['Malher chicken consome 908g',11.01],['Sushi nori',0],['Ancho chili 6oz',21.25],['Chili pasilla 6oz',0],['Capers 32oz',22.48],['Caulifornia chilli 6oz',0],['Arbol chilli 6oz',0],['Red pepper flakes',0],['Marie sharp pepper sauce 1gallon',38.06],['Red wine 1 Quart',15],['White Wine 1 quart',15],['55 Gallon Garbage bag',59.95],['Large Vacum bag',0],['zip lock 1 Gallon',20.3],['zip lock quarter',16.35],['Small snack zip lock',12.95],['Plastic wrap 18*200',62.25],['Foil 18*200',196.91],['Red onion',3],['yellow onion',2.5],['White onion',2.5],['Shallots',17],['chives',3.5],['Scallonis',3.75],['Tomatos',3.6],['tomatillo',7],['Cherry tomatos',9.5],['Sweet pepper',5.5],['Red bell pepepr',9],['Jalapeno',7],['Habanero',7],['Chilli pablano',11],['Cilantro',11],['leeks',11],['Parsley',8.5],['Dill',15],['Spinach',8],['Thyme',3],['Rosemarry',5],['Cucumber',1.25],['Dirty potatos',3],['Green beans',7],['Asparagus',20],['Beets',2.9],['Cauliflower',4],['Ginger',2.75],['Radish',5],['Mushroom',7.5],['Sweet corn',8],['Garlic',2.25],['Cellery',6],['Carrots',2.5],['Avocado',3],['Purple Cabbage',3],['White Cabbage',2.24],['Coco',2.8],['Banana leaf',3],['Green plantain',0.5],['Ripe Plantain',0.5],['Cassava',1.75],['Egge plant',4],['Strawberry',17],['Blue berry',11],['Papaya',6],['Mango imported',3.5],['Melon',2.5],['Pineapple local',4.5],['Imported pineapple',7.75],['Watermelon',1],['Imported orange',4.5],['Passion fruit',1.25],['Tangarin',2.75],['Pomegranate',0],['Red apple',2.25],['Green apple',2],['Pear',2.5],['Lime',0.75],['Lemon',2.5],['Grape fruit imported',3],['Mint',3],['Romaine lettuce',5.5],['Mexican Romaine',7],['Bibe lettuce',5.5],['Coconute',2.5],['Coconute oil',18.5],['Pork oil',5],['Black beans',5],['pinto beans',6],['banana',1],['Basil 4oz',5],['Jicama',0],['Kale',8],['Pumpking seed',0],['Peanuts',9],['Fish Trimings',18],['Fish wings',18],['Whole fish',18],['Shrimp Jumbo',25],['Conch',12],['Whole lobster',25],['Cook lobster',25],['Snapper fillet',18],['Groupper Fillet',18],['Jack fillet',16],['Lobster stock',0],['pork aju',0],['Shrimp stock',0],['Fish stock',0],['Chicken stock',0],['Vegetable stock',0],['Fish head',18],['Octopus',19],['Cook octopus',19],['Scallops',42],['Escoler fish',16],['Local tuna',16],['Tuna loin',35],['Taco portion',18],['Salmone',35],['Arroz portion',18],['Skweres',18],['Fish&chips',18],['Catch portion',18],['Home made Fries',6],['Tortillini',0],['Chicken empanadas',0],['Fish croquets',0],['Octopus empanadas',0],['Cook black Beans',5],['Cook red beans',5],['black Beans puree',6],['Peperoni',0],['Lamb',8],['Falafel',0],['Bacon pices',16],['Pine apple cinnamon jam',0],['Edamami',11.85],['Seaweed',48],['Cooked Bacon',16],['Mole verde',5.6],['Dry coconut',2.5],['pork Carnitas',8.5],['Pork belly',16],['Frozzen Strawberry',18],['Mango puree',3.5],['Hash brown',2],['Beef patty 18*20',18],['Cook Beef ribs',8.8],['Cook pork ribs',0],['Beef aju',0],['Neck&Back',1.28],['Whole chicken',2.9],['Roasted chicken',90],['French fries',16.41],['Tomato Past',9.95],['Wonton wrap',0],['Stone crab',25],['Leeks Potato Soup',0],['Chick Pies',0],['Cheddar cheese',0],['Italion sausage',8.5],['Chorizo',13.01],['Pig Foot/ pig head',5.85],['Pork chop',0],['Ground beef',0],['Dumpling wrop',0],['Cooke black beans',0],['Chorriso',13.01],['Flour dough',0],['Lobster',25],['Cooke octopus',0.23],['Catch',18],['Yellow corn toritlla',2.5],['Pastry dough',0],['Asion Mayo',0],['Salas Macha',0],['Pineapple jam',0],['Confit garlic',0],['Chipotle mayo',0],['Onion sofito',0],['White wine reducion',0],['Caramel sauce',0],['Sofito for col',0],['Caramel onion',0],['Caffee caramel sauce',0],['Tikka paste',0],['Pear syrup',0],['Brown butter cream cheese',0],['French toast mix',0],['Shushi rice',0],['Leeks/ potato soup',0],['Celery ranch',0],['Tartar sauce',0],['Dill yugort sauce',0],['Fry egg mayo',0],['Garlic conift',0],['Parsley aioli',0],['Ketchup',0],['Hot sauce',0],['Sweet soy sauce',0],['Soy redoction',0],['Aji amarillo',0],['Sushi ginger 12oz',12.95],['Green oil',0],['Red oil',0],['Marrie sharp',0],['Maple syrup',0],['Straw beerry jam',0],['Chimichurri sauce',0],['Roasted Habanero sauce',0],['Home made mayo',0],['Pastry cream',0],['Micro greens',0],['Homemade mayo',0],['Pasion fruit',0],['Pickle celery',0],['Pickel onion',0],['Pickel cabbage',0],['Roasted Habanero past',0],['Sala verde',0],['Roasted leeks',0],['Salmoreta paste',0],['pig carnita',0],['Smoke rice&beans',0],['Cassava puree',0],['Col',0],['three color masa',0],['corn bacon',0],['chapped parsley',0],['Caramelize onion',0],['Dijonies for burger',0],['Cauliflower puree',0],['Chicken Aju',0],['Veggie stock',0],['Lobster Veloute',0],['Leek&potato soup',0],['Pine apple salsa',0],['coconut milk',0],['Beets puree',0],['Red wine',0],['White wine',0],['Slice bacon',0],['Beef patty',18],['Snapper portation',18],['Grouper',18],['Marina Vegetbale oil',0],['coconut oil',0],['olive oil',0],['Egg white',0],['Condence milk',4.25],['Skewer mix',0],['Carlic confit',0],['Caffe caramel sauce',0],['Large black gloves',0],['Medium black gloves',0],['Grill brick 1cs =12',0],['Scotch brite with sponge',0],['Easy off',0],['Butane gas cartridge',0],['Hand soap',0],['Axion soap 1 litter',0],['Mosquito coil',0],['Potwasher',0],['Hand spray liqued soap',0],['Clorox',0],['5 Gallon water',0],['Joy 1Quart',0],['Purple bast 1 gallon',0],['Brillo with soap 10 pods',0],['Heavy dust degresser',0],['Alkaline flour cleaner',0],['Citrus power 1 Gallon',0],['burger bread',0],['Pita Bread',0],['Bao bun',0],['French toast bread',0],['Flour totilla',3.5],['Lobster roll',0],['English muffin',0],['Fucaccia',0],['Isla bonita',0],['White corn meal',0],['Yellow corn meal',0],['Bebe Agua flour',0],['Gluten free Flour',0],['Powder sugar',0],['Powder milk',0],['Tapioca flour',0],['Cheese Mozarella 5lb',11.05],['Parmessan cheese',19.59],['Philadephia cheese 8oz',15.95],['Yellow cheddar chesse',1.64],['eggs',9.25],['Amirian cheese 9.2oz ( 16 slice)',4.95],['Hersheys chocolate chip 15oz',13.95],['coconut flakes 7oz',8.95],['Feta chhese 6oz',14.95],['Ricotta chesse 15oz',11.95],['Plane yogurt',12],['Greek yogurt 1 quart',30],['Goat chhese 10.5oz',0],['Blue chhese',0],['Sour cream 5lb',10.95],['Unsalted butter anchor',16],['Heavy cream 1 quart',24.25],['Lala light 1 quart',3.84],['Elbow pasta prep',2],['Arroz prep 12oz',1.75],['Rissoto rice 12oz',10.5],['Mac&cheese mix',0],['Lobster Bechamel',0],['Mornay sauce',0],['Truffle mornay',0],['Badia Wholw black pepper 160z',24.95],['Ground Black pepper 16oz',22.95],['pink pepper corn 9oz',0],['Badia paprika 16oz',19.95],['Badia Bay leave 1.5oz',12.95],['Badia thyme 8oz',13.75],['Badia black sesame seed 16oz',15.95],['Badia curry powder 16oz',0],['Spice Classes onion powder 16oz',17.95],['Mc White sesame seed 16oz',14.95],['Global chef Fennel seed 12oz',10.44],['Badia Ground tumeric 7oz',9.95],['Global chef Cajun Seasoning',0],['Dill weed dry',8.25],['Chili powder 16oz',20.95],['Mustard seed 24oz',16.8],['Anise seed 7oz',32.2],['Cumin powder 16oz',16.95],['Eveything bagels 22oz',0],['Gamram masala 16oz',33.95],['Cinnamon powder 16oz',22.25],['Garlic powder 16oz',20.95],['Star anise 7oz',37.75],['Annato 10oz',0],['Cloves 1.25',0],['Nutmeg 16oz',36.95],['Pumpking pie spice 2oz',4.6],['Oregano 0.5oz',4.95],['Cardamon 1.75oz',15.25],['Citric acid powder',0],['Kosher salt 1lb',10.5],['All spaice 16oz',21.95],['Badia Crush pepper flakes 12oz',16.95],['AI sauce 10oz',0],['Light corn syrup',14.5],['Black truffle oil 3.38oz',39.25],['Lemon extract',0],['White truffle oil',39.25],['Vanilla etxtrac',13.95],['Siracha 1.12lb',0],['White rum 1Litter',24],['Balsamic Vinegar',13.95],['Tahini',26.7],['Table salt',2],['Sho chka bai vinegar',59.95],['ciscos shortening',0],['Agar agar',0],['Quina',54.95],['Pectin fruit',0],['Green lentins',16.25],['Pinenuts',78.25],['Pecans',74.95],['Almones',59.95],['Black Recado',10.15],['Red recado',10.15],['Ambersia sesame oil',45.69],['Pumking seed',0],['Seed weed',0],['Vanilla crumble',0],['Black seasme seed',0],['all bagels',0],['Shallots cruble',0],['Toastadas chips',2.5],['Cassava chips',0],['Brown suagr tuille',0],['Tortilla straws',2.5],['Plantain chips',0],['Croutons',0],['Chichen consume',0],['Soy sauce',0],['Coffee',0],['Cauliforina pepper',0],['Chile ancho',0],['Vergin olive oil',0]],
-  Bar:[['Bacardi Carta Blanca',86],['Bacardi Gran Anejo',86],['Belizean Blue',125.71],['Don Omarios',125.71],['Copalli Barrel Rested',84.57],['Copalli Cacao Organic',84.57],['Copalli Organic White',78.85],['Zacapa',211],['Captain Morgan',104],['Flor De Cana 7 single estate',108.57],['Flor De Cana 12 years',146],['Havana Club',73],['Old Master',25],['Caribbean White',21],['Caribbean White (elephant foot)',21],['Caribbean Gold',21],['Caribbean Gold (elephant foot)',21],['Coconut Rum Caribbean',34],['Coconut Rum Elephant Foot Crystal',56],['Absolute Vodka',93.71],['Ketel One',137.14],['Grey Goose',131.42],['Titos',113],['Titos Elephant Foot',113],['Hyper vodka',0],['Tanqueray London Dry',108.57],['Bulldog Gin',113],['Hendricks',157],['Baron Gin',22],['Jose Cuervo Gold',70],['1800 Silver',85.71],['Casa Amigos Blanco',211.42],['Casa Amigos Anejo',248],['Don Julio Blanco',184],['Don Julio Reposado',172.5],['Clase Azul',1028.57],['Patron Silver',142.85],['Patron Anejo',160],['Patron Reposado',160],['Casa Amigos Mezcal Artesanal',0],['Zignum Reposado',120],['Zignum Joven',0],['Buchanans Deluxe',160],['Chivas Regal',132],['Macallan',213],['Bulleit Bourbon',151],['Bulleit Bourbon Rye',165.71],['Johnnie Walker Black Label',140],['Johnnie Walker Blue Label',634],['Jameson',122],['The Glenlivet',173],['Glenfiddich 12',162],['Gentleman Jack',156],['Woodford Reserve',173],['Crown Royal',141.7],['Licor 43',124],['Aperol',99.42],['Cinzano Extra Dry',43],['Cinzano Rosso Sweet Vermouth',43],['Frangelico',120],['Campari',43],['Baileys',130],['Kahlua',112],['Grand Marnier',145],['Disaronno',130],['Apricot Brandy',96],['Jagermeister',108],['Fireball',100.57],['Pisco Jimenez Acholado',80],['Pama Pomegranate Liqueur',139],['St. Germain',139.42],['Dekuyper Peppermint',89],['Hennessy VS',225],['Orange liqueur (infusion)',0],['Hibiscus vodka (infusion)',0],['Monin Pomegranate syrup',26.9],['Monin Passion Fruit syrup',26.9],['Monin Coconut syrup',26.9],['Orelle Cabernet Medium Sweet',40],['Bessan Chateau (red)',43.56],['Dinastico IL Palazzo',52.44],['Santalba Rioja Tempranillo',33.14],['Maison Castel Cabernet',34],['Ruta 5 Cabernet (sangria)',28.12],['Vu Manent Malbec',42.75],['REIGN Merlot Napa Valley',168.75],['Maison Castel Chardonnay',34],['Cavalier Grenache Rose',41.56],['Orelle Rose',37.78],['Zonin Ventiterre Pinot Grigio',22.22],['Zonin Pinot Grigio',39.37],['Vu Manent Sauvignon Blanc',38],['RIPPEY Sauvignon Blanc Napa Valley',73.12],['Bordeaux Chateau Haut Bastor',52.44],['Klinker Brick Albarino',56.25],['SIP Moscato 2022 California',56.25],['Zonin Prosecco',42],['Deccolio Prosecco',43.56],['Pignoletto Brut',41.56],['Etre Vu Da Verse Brut',73.12],['Donelli Lambrusco',34.09],['G.Gobillard Brut',113.14],['G.Gobillard Rose',170.28],['G.Gobillard Blanc de Blanc',147.42],['Belikin Lager',2.25],['Belikin Stout',2.25],['Heineken',3.75],['Red Stripe',4.58],['Land Shark',2.67],['Heineken 0% Alcohol',4],['Becks Blue non alcoholic',3.05],['Coke Zero',0.96],['Soda Water',0.96],['Coke',0.96],['Sprite',0.96],['Ginger Fanta',0.96],['Tonic Water',0.79],['Crystal Water 500ml',1],['Fiji Water',4.58],['Ginger Beer',4.96],['Perrier Sparkling',5.08],['San Pellegrino Natural',0],['San Pellegrino Flavored',0],['Perrier Strawberry',0],['Red Bull Energy Drink',0],['Maisonette Perrier',0]],
+  Kitchen:[['Purity flour 5.5lb',1.06],['Maseca flour',8.55],['Whole wheat flour 5lb',7.75],['Rice flour',7.95],['White Sugar',0.96],['Brown sugar',0.85],['Granny\'s Reg Rice',3.8],['Goya Valencia Rice 12oz',10.5],['Sushi rice',13],['Arborio rice',10.5],['Kosher salt',11.95],['White paper towel 12',4.04],['White vinegar',5.35],['Maxwell coffe 3lb',57.72],['Sysco Mayo',36.95],['Dijon Mustard 8oz',14.5],['Global chef Pancake Syrup 1Gallon',31.95],['Whole peel tomato 6.10lb',20.3],['Tomato ketchup',22.85],['Tomato paste 8oz',9.95],['Fortina Cocnut powder',32.63],['Baking powder',4.8],['White Sesame seed',15.34],['Curry powder',18.75],['Badia Oregano 5.5oz',11.95],['Paprika 16oz',19.95],['Chine panko 5lb',8.39],['Corn starch 1lb',3.7],['Xanthan Gum 1oz',27.95],['Hondashi 4.23oz',20.75],['Instant yeast 1lb',11.5],['Tapioca pearls',5.95],['Yellow corn popcorn 1lb',4.95],['Elbow pasta 1lb',2],['coconut Milk Powder 1box 12pk',2.18],['Pork fat',3],['Tahini 1lb',26.7],['Sweet condensed milk 14oz',4.95],['Caramel sauce in can',4.95],['GraceCoconut milk 400ml',5.43],['Chipotle Adobados 220g',10.75],['Sweet soy sauce 296',12.95],['La choy Soy sauce 1 gallon',63.04],['Crisco vegetble shorteninf 3lb',45.48],['Clear Fry Shortening Marina 35lb',105.06],['Vegetable oil 35lb',81.96],['Vergine olvie oil 3 litter',120.3],['Seasame oil 56oz',47.27],['Pam spray 1.1lbs',11.58],['Malher chicken consome 908g',11.01],['Ancho chili 6oz',21.25],['Capers 32oz',22.48],['Marie sharp pepper sauce 1gallon',38.06],['Red wine 1 Quart',15],['White Wine 1 quart',15],['55 Gallon Garbage bag',59.95],['zip lock 1 Gallon',20.3],['zip lock quarter',16.35],['Small snack zip lock',12.95],['Plastic wrap 18*200',62.25],['Foil 18*200',196.91],['Red onion',3],['yellow onion',2.5],['White onion',2.5],['Shallots',17],['chives',3.5],['Scallonis',3.75],['Tomatos',3.6],['tomatillo',7],['Cherry tomatos',9.5],['Sweet pepper',5.5],['Red bell pepepr',9],['Jalapeno',7],['Habanero',7],['Chilli pablano',11],['Cilantro',11],['leeks',11],['Parsley',8.5],['Dill',15],['Spinach',8],['Thyme',3],['Rosemarry',5],['Cucumber',1.25],['Dirty potatos',3],['Green beans',7],['Asparagus',20],['Beets',2.9],['Cauliflower',4],['Ginger',2.75],['Radish',5],['Mushroom',7.5],['Sweet corn',8],['Garlic',2.25],['Cellery',6],['Carrots',2.5],['Avocado',3],['Purple Cabbage',3],['White Cabbage',2.24],['Coco',2.8],['Banana leaf',3],['Green plantain',0.5],['Ripe Plantain',0.5],['Cassava',1.75],['Egge plant',4],['Strawberry',17],['Blue berry',11],['Papaya',6],['Mango imported',3.5],['Melon',2.5],['Pineapple local',4.5],['Imported pineapple',7.75],['Watermelon',1],['Imported orange',4.5],['Passion fruit',1.25],['Tangarin',2.75],['Red apple',2.25],['Green apple',2],['Pear',2.5],['Lime',0.75],['Lemon',2.5],['Grape fruit imported',3],['Mint',3],['Romaine lettuce',5.5],['Mexican Romaine',7],['Bibe lettuce',5.5],['Coconute',2.5],['Coconute oil',18.5],['Pork oil',5],['Black beans',5],['pinto beans',6],['banana',1],['Basil 4oz',5],['Kale',8],['Peanuts',9],['Fish Trimings',18],['Fish wings',18],['Whole fish',18],['Shrimp Jumbo',25],['Conch',12],['Whole lobster',25],['Cook lobster',25],['Snapper fillet',18],['Groupper Fillet',18],['Jack fillet',16],['Fish head',18],['Octopus',19],['Cook octopus',19],['Scallops',42],['Escoler fish',16],['Local tuna',16],['Tuna loin',35],['Taco portion',18],['Salmone',35],['Arroz portion',18],['Skweres',18],['Fish&chips',18],['Catch portion',18],['Home made Fries',6],['Cook black Beans',5],['Cook red beans',5],['black Beans puree',6],['Lamb',8],['Bacon pices',16],['Edamami',11.85],['Seaweed',48],['Cooked Bacon',16],['Mole verde',5.6],['Dry coconut',2.5],['pork Carnitas',8.5],['Pork belly',16],['Frozzen Strawberry',18],['Mango puree',3.5],['Hash brown',2],['Beef patty 18*20',18],['Cook Beef ribs',8.8],['Neck&Back',1.28],['Whole chicken',2.9],['Roasted chicken',90],['French fries',16.41],['Tomato Past',9.95],['Stone crab',25],['Italion sausage',8.5],['Chorizo',13.01],['Pig Foot/ pig head',5.85],['Chorriso',13.01],['Lobster',25],['Cooke octopus',0.23],['Catch',18],['Yellow corn toritlla',2.5],['Sushi ginger 12oz',12.95],['Beef patty',18],['Snapper portation',18],['Grouper',18],['Condence milk',4.25],['Flour totilla',3.5],['Cheese Mozarella 5lb',11.05],['Parmessan cheese',19.59],['Philadephia cheese 8oz',15.95],['Yellow cheddar chesse',1.64],['eggs',9.25],['Amirian cheese 9.2oz ( 16 slice)',4.95],['Hersheys chocolate chip 15oz',13.95],['coconut flakes 7oz',8.95],['Feta chhese 6oz',14.95],['Ricotta chesse 15oz',11.95],['Plane yogurt',12],['Greek yogurt 1 quart',30],['Sour cream 5lb',10.95],['Unsalted butter anchor',16],['Heavy cream 1 quart',24.25],['Lala light 1 quart',3.84],['Elbow pasta prep',2],['Arroz prep 12oz',1.75],['Rissoto rice 12oz',10.5],['Badia Wholw black pepper 160z',24.95],['Ground Black pepper 16oz',22.95],['Badia paprika 16oz',19.95],['Badia Bay leave 1.5oz',12.95],['Badia thyme 8oz',13.75],['Badia black sesame seed 16oz',15.95],['Spice Classes onion powder 16oz',17.95],['Mc White sesame seed 16oz',14.95],['Global chef Fennel seed 12oz',10.44],['Badia Ground tumeric 7oz',9.95],['Dill weed dry',8.25],['Chili powder 16oz',20.95],['Mustard seed 24oz',16.8],['Anise seed 7oz',32.2],['Cumin powder 16oz',16.95],['Gamram masala 16oz',33.95],['Cinnamon powder 16oz',22.25],['Garlic powder 16oz',20.95],['Star anise 7oz',37.75],['Nutmeg 16oz',36.95],['Pumpking pie spice 2oz',4.6],['Oregano 0.5oz',4.95],['Cardamon 1.75oz',15.25],['Kosher salt 1lb',10.5],['All spaice 16oz',21.95],['Badia Crush pepper flakes 12oz',16.95],['Light corn syrup',14.5],['Black truffle oil 3.38oz',39.25],['White truffle oil',39.25],['Vanilla etxtrac',13.95],['White rum 1Litter',24],['Balsamic Vinegar',13.95],['Tahini',26.7],['Table salt',2],['Sho chka bai vinegar',59.95],['Quina',54.95],['Green lentins',16.25],['Pinenuts',78.25],['Pecans',74.95],['Almones',59.95],['Black Recado',10.15],['Red recado',10.15],['Ambersia sesame oil',45.69],['Toastadas chips',2.5],['Tortilla straws',2.5]],
+  Bar:[['Bacardi Carta Blanca',86],['Bacardi Gran Anejo',86],['Belizean Blue',125.71],['Don Omarios',125.71],['Copalli Barrel Rested',84.57],['Copalli Cacao Organic',84.57],['Copalli Organic White',78.85],['Zacapa',211],['Captain Morgan',104],['Flor De Cana 7 single estate',108.57],['Flor De Cana 12 years',146],['Havana Club',73],['Old Master',25],['Caribbean White',21],['Caribbean White (elephant foot)',21],['Caribbean Gold',21],['Caribbean Gold (elephant foot)',21],['Coconut Rum Caribbean',34],['Coconut Rum Elephant Foot Crystal',56],['Absolute Vodka',93.71],['Ketel One',137.14],['Grey Goose',131.42],['Titos',113],['Titos Elephant Foot',113],['Tanqueray London Dry',108.57],['Bulldog Gin',113],['Hendricks',157],['Baron Gin',22],['Jose Cuervo Gold',70],['1800 Silver',85.71],['Casa Amigos Blanco',211.42],['Casa Amigos Anejo',248],['Don Julio Blanco',184],['Don Julio Reposado',172.5],['Clase Azul',1028.57],['Patron Silver',142.85],['Patron Anejo',160],['Patron Reposado',160],['Zignum Reposado',120],['Buchanans Deluxe',160],['Chivas Regal',132],['Macallan',213],['Bulleit Bourbon',151],['Bulleit Bourbon Rye',165.71],['Johnnie Walker Black Label',140],['Johnnie Walker Blue Label',634],['Jameson',122],['The Glenlivet',173],['Glenfiddich 12',162],['Gentleman Jack',156],['Woodford Reserve',173],['Crown Royal',141.7],['Licor 43',124],['Aperol',99.42],['Cinzano Extra Dry',43],['Cinzano Rosso Sweet Vermouth',43],['Frangelico',120],['Campari',43],['Baileys',130],['Kahlua',112],['Grand Marnier',145],['Disaronno',130],['Apricot Brandy',96],['Jagermeister',108],['Fireball',100.57],['Pisco Jimenez Acholado',80],['Pama Pomegranate Liqueur',139],['St. Germain',139.42],['Dekuyper Peppermint',89],['Hennessy VS',225],['Monin Pomegranate syrup',26.9],['Monin Passion Fruit syrup',26.9],['Monin Coconut syrup',26.9],['Orelle Cabernet Medium Sweet',40],['Bessan Chateau (red)',43.56],['Dinastico IL Palazzo',52.44],['Santalba Rioja Tempranillo',33.14],['Maison Castel Cabernet',34],['Ruta 5 Cabernet (sangria)',28.12],['Vu Manent Malbec',42.75],['REIGN Merlot Napa Valley',168.75],['Maison Castel Chardonnay',34],['Cavalier Grenache Rose',41.56],['Orelle Rose',37.78],['Zonin Ventiterre Pinot Grigio',22.22],['Zonin Pinot Grigio',39.37],['Vu Manent Sauvignon Blanc',38],['RIPPEY Sauvignon Blanc Napa Valley',73.12],['Bordeaux Chateau Haut Bastor',52.44],['Klinker Brick Albarino',56.25],['SIP Moscato 2022 California',56.25],['Zonin Prosecco',42],['Deccolio Prosecco',43.56],['Pignoletto Brut',41.56],['Etre Vu Da Verse Brut',73.12],['Donelli Lambrusco',34.09],['G.Gobillard Brut',113.14],['G.Gobillard Rose',170.28],['G.Gobillard Blanc de Blanc',147.42],['Belikin Lager',2.25],['Belikin Stout',2.25],['Heineken',3.75],['Red Stripe',4.58],['Land Shark',2.67],['Heineken 0% Alcohol',4],['Becks Blue non alcoholic',3.05],['Coke Zero',0.96],['Soda Water',0.96],['Coke',0.96],['Sprite',0.96],['Ginger Fanta',0.96],['Tonic Water',0.79],['Crystal Water 500ml',1],['Fiji Water',4.58],['Ginger Beer',4.96],['Perrier Sparkling',5.08]],
   Glassware:[['Wine glass',3],['Pint glass',2.2],['Rocks glass',2],['Champagne flute',3.5],['Water tumbler',1.8],['Coffee mug',2.5],['Carafe',5]],
   Silverware:[['Dinner fork',1.5],['Dinner knife',1.8],['Soup spoon',1.4],['Teaspoon',1.1],['Steak knife',3],['Serving spoon',2.5],['Side plate',2.2]],
   Server:[['To-go container',0.35],['To-go bag',0.15],['Paper napkins (bundle)',0.6],['Straws (box)',1.2],['Condiment cups',0.1],['Coffee (pot)',1.5],['Iced tea (batch)',1],['Butter ramekin',0.2]],
@@ -340,11 +336,8 @@ const DEFAULT_ITEMS = {
 };
 
 /* ---------- STATE ---------- */
-let store = JSON.parse(localStorage.getItem('wasteStore')) || {
-  users: [],
-  logs: [],
-  settings: { restName: 'WasteLog', syncUrl: '', customItems: DEFAULT_ITEMS }
-};
+let dbItems = []; // Populated dynamically from Neon
+let liveLogs = []; // Populated dynamically from Neon
 let currentUser = null;
 let currentCat = 'Kitchen';
 let currentReason = REASONS[0];
@@ -354,7 +347,6 @@ let currentShift = SHIFTS[0];
 function init() {
   document.getElementById('todayDate').textContent = new Date().toLocaleDateString();
 
-  // 1. Check if user is already logged in from a previous session
   const savedUser = localStorage.getItem('waste_session');
   if (savedUser) {
     try {
@@ -368,12 +360,10 @@ function init() {
     }
   }
 
-  // 2. Default to login screen if no saved session
   document.getElementById('authScreen').classList.remove('hidden');
   document.getElementById('appScreen').classList.add('hidden');
   setAuthTab('login');
 
-  // Build category toggles for registration if empty
   const rgFields = document.getElementById('rgFields');
   if (rgFields && rgFields.children.length === 0) {
     CATS.forEach(c => {
@@ -382,55 +372,18 @@ function init() {
     });
   }
 }
-async function fetchLogsFromDatabase() {
-  try {
-    const res = await fetch('https://waste-log-api.onrender.com/api/logs');
-    const logs = await res.json();
-    if (Array.isArray(logs)) {
-      // Map database snake_case or column names to your app's state format if needed, 
-      // or load them directly into state.log
-      state.log = logs.map(row => ({
-        id: row.id,
-        day: row.day ? row.day.slice(0, 10) : todayKey(),
-        time: row.time || '',
-        shift: row.shift || 'AM',
-        cat: row.category || 'Kitchen',
-        item: row.item || '',
-        qty: row.quantity || 1,
-        cost: parseFloat(row.unit_cost || 0),
-        total: parseFloat(row.total_cost || 0),
-        reason: row.reason || 'Other',
-        user: row.staff || 'Unknown'
-      }));
-      render();
-    }
-  } catch (err) {
-    console.error('Error loading logs from Neon:', err);
-  }
-}
 
-/* ---------- AUTH LOGIC ---------- */
 function setAuthTab(tab) {
-  document.getElementById('loginForm').classList.toggle('hidden', tab !== 'login');
-  document.getElementById('regForm').classList.toggle('hidden', tab !== 'reg');
-  document.getElementById('tabLogin').classList.toggle('on', tab === 'login');
-  document.getElementById('tabReg').classList.toggle('on', tab === 'reg');
+  document.getElementById('tabLogin').classList.toggle('on', tab==='login');
+  document.getElementById('tabReg').classList.toggle('on', tab==='reg');
+  document.getElementById('loginForm').style.display = tab==='login' ? 'block' : 'none';
+  document.getElementById('regForm').style.display = tab==='reg' ? 'block' : 'none';
+  document.getElementById('authSub').textContent = tab==='login' ? 'Sign in to start logging' : 'Set up your access pin';
   document.getElementById('liErr').textContent = '';
   document.getElementById('rgErr').textContent = '';
 }
 
-let rgSelFields = [];
-function toggleField(key) {
-  const el = document.getElementById('fc_' + key);
-  if (rgSelFields.includes(key)) {
-    rgSelFields = rgSelFields.filter(k => k !== key);
-    el.classList.remove('on');
-  } else {
-    rgSelFields.push(key);
-    el.classList.add('on');
-  }
-}
-
+function toggleField(key) { document.getElementById(`fc_${key}`).classList.toggle('on'); }
 function toggleMgr(e) {
   const cb = document.getElementById('rgMgr');
   if(e.target !== cb) cb.checked = !cb.checked;
@@ -447,7 +400,7 @@ async function doLogin() {
   errEl.textContent = "Connecting to database...";
 
   try {
-    const res = await fetch('https://waste-log-api.onrender.com/api/users/login', {
+    const res = await fetch(`${API_BASE}/users/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username: user, password: pass })
@@ -468,10 +421,7 @@ async function doLogin() {
         fields: userFields
       };
 
-      // Save user session so browser refreshes keep you logged in
       localStorage.setItem('waste_session', JSON.stringify(currentUser));
-
-      // Remove .hidden class properly so CSS !important doesn't block rendering
       document.getElementById('authScreen').classList.add('hidden');
       document.getElementById('appScreen').classList.remove('hidden');
 
@@ -486,6 +436,7 @@ async function doLogin() {
     errEl.textContent = "Server connection error.";
   }
 }
+
 async function doRegister() {
   const name = document.getElementById('rgName').value.trim();
   const user = document.getElementById('rgUser').value.trim().toLowerCase();
@@ -501,7 +452,7 @@ async function doRegister() {
   errEl.textContent = "Creating account in Neon...";
 
   try {
-    const res = await fetch('https://waste-log-api.onrender.com/api/users/register', {
+    const res = await fetch(`${API_BASE}/users/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, username: user, password: pass, is_manager: isMgr, fields })
@@ -523,6 +474,7 @@ async function doRegister() {
     errEl.textContent = "Server connection error.";
   }
 }
+
 function logout() {
   currentUser = null;
   localStorage.removeItem('waste_session');
@@ -532,65 +484,99 @@ function logout() {
   document.getElementById('liPass').value = '';
 }
 
-/* ---------- APP LOGIC ---------- */
-function showApp() {
-  document.getElementById('authScreen').classList.add('hidden');
-  document.getElementById('appScreen').classList.remove('hidden');
-  document.getElementById('restName').textContent = store.settings.restName;
-  
-  const b = document.getElementById('userBadge');
-  b.innerHTML = `<div class="fdot" style="background:${currentUser.isMgr ? 'var(--bad)' : 'var(--accent)'}"></div>${currentUser.name} ▾`;
-  document.getElementById('loggedByChip').innerHTML = `<div class="fdot" style="background:${currentUser.isMgr ? 'var(--bad)' : 'var(--accent)'}"></div>${currentUser.name}`;
-
+/* ---------- APP SETUP & DATA FETCHING ---------- */
+function setupAppForUser() {
+  document.getElementById('restName').textContent = 'Akasha Restaurant';
   document.getElementById('setupBtn').style.display = currentUser.isMgr ? 'block' : 'none';
   document.getElementById('btn-reports').style.display = currentUser.isMgr ? 'block' : 'none';
-
-  // Categories
-  currentCat = currentUser.fields[0] || 'Kitchen';
-  renderCats();
-  renderReasons();
-  renderShifts();
-  updateItemList();
-  renderEntries();
-}
-
-function renderCats() {
-  const cont = document.getElementById('cats');
-  cont.innerHTML = currentUser.fields.map(k => {
-    const c = CATS.find(x => x.key === k);
-    return `<div class="cat ${c.cls} ${currentCat === k ? 'sel' : ''}" onclick="setCat('${k}')">
-              <div class="dot"></div>${k}
-            </div>`;
-  }).join('');
-}
-
-function setCat(k) {
-  currentCat = k;
-  renderCats();
-  updateItemList();
-}
-
-function updateItemList() {
-  const sel = document.getElementById('item');
-  const term = document.getElementById('itemSearch').value.toLowerCase();
-  const list = store.settings.customItems[currentCat] || [];
   
-  sel.innerHTML = list
-    .filter(i => i[0].toLowerCase().includes(term))
-    .map(i => `<option value="${i[0]}" data-cost="${i[1]}">${i[0]}</option>`)
-    .join('');
+  document.getElementById('userBadge').innerHTML = `<div class="fdot" style="background:${currentUser.isMgr ? 'var(--accent)' : 'var(--warn)'}"></div>${currentUser.name}`;
+  document.getElementById('loggedByChip').innerHTML = `<div class="fdot" style="background:${currentUser.isMgr ? 'var(--accent)' : 'var(--warn)'}"></div>${currentUser.name}`;
   
-  updateCostFromItem();
+  const userFields = Array.isArray(currentUser.fields) ? currentUser.fields : [];
+  const availCats = currentUser.isMgr ? CATS : CATS.filter(c => userFields.includes(c.key));
+  currentCat = availCats[0]?.key || 'Kitchen';
+  
+  buildCats(availCats);
+  buildChips('reasons', REASONS, currentReason, setReason);
+  buildChips('shifts', SHIFTS, currentShift, setShift);
+  
+  setCat(currentCat);
+  
+  fetchItemsFromCloud();
+  fetchLogsFromCloud();
+}
+
+async function fetchItemsFromCloud() {
+  try {
+    const res = await fetch(`${API_BASE}/items`);
+    if (res.ok) {
+      dbItems = await res.json();
+      filterItems();
+    }
+  } catch (err) {
+    console.error("Error fetching items from database:", err);
+  }
+}
+
+async function fetchLogsFromCloud() {
+  const statusEl = document.getElementById('syncStatus');
+  statusEl.textContent = 'Fetching live logs from cloud...';
+  statusEl.style.color = 'var(--warn)';
+  
+  try {
+    const res = await fetch(`${API_BASE}/logs`);
+    if (!res.ok) throw new Error('Database server error');
+    
+    liveLogs = await res.json();
+    statusEl.textContent = '✓ Live Synced to Neon';
+    statusEl.style.color = 'var(--good)';
+    renderEntries();
+  } catch (err) {
+    console.error("Fetch error:", err);
+    statusEl.textContent = '✗ Connection Error - Database Unreachable';
+    statusEl.style.color = 'var(--bad)';
+  }
+}
+
+function buildCats(cats) {
+  const html = cats.map(c => `<div class="cat ${c.cls} ${c.key===currentCat?'sel':''}" id="cat_${c.key}" onclick="setCat('${c.key}')"><div class="dot"></div>${c.key}</div>`).join('');
+  document.getElementById('cats').innerHTML = html;
+}
+
+function setCat(key) {
+  currentCat = key;
+  document.querySelectorAll('.cat').forEach(el => el.classList.remove('sel'));
+  const el = document.getElementById(`cat_${key}`);
+  if(el) el.classList.add('sel');
+  document.getElementById('itemSearch').value = '';
+  filterItems();
 }
 
 function filterItems() {
-  updateItemList();
+  const q = (document.getElementById('itemSearch')?.value || '').toLowerCase();
+  
+  // Filter dynamically from Neon items list
+  const filtered = dbItems.filter(i => 
+    i.category === currentCat && 
+    i.name.toLowerCase().includes(q)
+  );
+
+  const sel = document.getElementById('item');
+  if (!sel) return;
+  
+  if (filtered.length === 0) {
+    sel.innerHTML = `<option value="0">No items found in database...</option>`;
+  } else {
+    sel.innerHTML = filtered.map(i => `<option value="${i.unit_cost}">${i.name}</option>`).join('');
+  }
+  updateCostFromItem();
 }
 
 function updateCostFromItem() {
   const sel = document.getElementById('item');
-  if (sel.options.length > 0) {
-    document.getElementById('cost').value = parseFloat(sel.options[sel.selectedIndex].dataset.cost).toFixed(2);
+  if(sel.options.length > 0 && sel.value !== "0") {
+    document.getElementById('cost').value = parseFloat(sel.value).toFixed(2);
   } else {
     document.getElementById('cost').value = "0.00";
   }
@@ -598,317 +584,287 @@ function updateCostFromItem() {
 }
 
 function bump(dir) {
-  let q = parseInt(document.getElementById('qty').value) || 1;
-  q += dir;
-  if (q < 1) q = 1;
-  document.getElementById('qty').value = q;
+  const input = document.getElementById('qty');
+  let val = parseInt(input.value) || 0;
+  val += dir;
+  if(val < 1) val = 1;
+  input.value = val;
   calcTotal();
 }
 
 function calcTotal() {
-  let q = parseInt(document.getElementById('qty').value) || 1;
-  let c = parseFloat(document.getElementById('cost').value) || 0;
-  document.getElementById('lineTotal').textContent = '$' + (q * c).toFixed(2);
+  const q = parseInt(document.getElementById('qty').value) || 1;
+  const c = parseFloat(document.getElementById('cost').value) || 0;
+  document.getElementById('lineTotal').textContent = `$${(q * c).toFixed(2)}`;
 }
 
-function renderReasons() {
-  document.getElementById('reasons').innerHTML = REASONS.map(r => 
-    `<div class="chip ${currentReason === r ? 'sel' : ''}" onclick="setReason('${r}')">${r}</div>`
-  ).join('');
+function buildChips(containerId, list, selected, callback) {
+  const html = list.map(item => `<div class="chip ${item===selected?'sel':''}" onclick="${callback.name}('${item}')">${item}</div>`).join('');
+  document.getElementById(containerId).innerHTML = html;
 }
 
-function setReason(r) {
-  currentReason = r;
-  renderReasons();
-}
+function setReason(r) { currentReason = r; buildChips('reasons', REASONS, currentReason, setReason); }
+function setShift(s) { currentShift = s; buildChips('shifts', SHIFTS, currentShift, setShift); }
+function toggleMenu() { document.getElementById('userMenu').classList.toggle('hidden'); }
 
-function renderShifts() {
-  document.getElementById('shifts').innerHTML = SHIFTS.map(s => 
-    `<div class="chip ${currentShift === s ? 'sel' : ''}" onclick="setShift('${s}')">${s}</div>`
-  ).join('');
-}
-
-function setShift(s) {
-  currentShift = s;
-  renderShifts();
-}
-
-function logEntry() {
+async function logEntry() {
   const sel = document.getElementById('item');
-  if (sel.options.length === 0) return alert('Select an item');
-  
-  const itemName = sel.value;
-  const qty = parseInt(document.getElementById('qty').value) || 1;
-  const cost = parseFloat(document.getElementById('cost').value) || 0;
-  
-  const entry = {
-    id: Date.now().toString(),
-    ts: new Date().toISOString(),
-    day: new Date().toISOString().slice(0, 10), // Ensures 'day' is populated for the database
-    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), // Ensures 'time' is populated
-    user: currentUser.name,
-    cat: currentCat,
-    item: itemName,
-    qty: qty,
-    cost: cost,
-    reason: currentReason,
-    shift: currentShift,
-    total: qty * cost
-  };
-  
-  store.logs.unshift(entry);
-  saveStore();
-  
-  // Send the new entry directly to your Render backend & Neon database
-  syncEntry(entry);
-  
-  document.getElementById('qty').value = 1;
-  renderEntries();
-}
-  
-  async function syncEntry(entry) {
-  const url = 'https://waste-log-api.onrender.com/api/sync';
-  const s = document.getElementById('syncStatus');
-  if (s) { s.style.color = 'var(--muted)'; s.textContent = 'Syncing to server...'; }
+  const itemName = sel.options.length > 0 ? sel.options[sel.selectedIndex].text : '';
+  if(!itemName || itemName === 'No items found in database...') return alert("Select a valid item.");
 
-  const syncPayload = {
-    day: entry.day,
-    time: entry.time,
-    shift: entry.shift,
-    category: entry.cat,      // Maps entry.cat to category
-    item: entry.item,
-    quantity: entry.qty,      // Maps entry.qty to quantity
-    unitCost: entry.cost,     // Maps entry.cost to unitCost
-    totalCost: entry.total,
-    reason: entry.reason,
-    staff: entry.user         // Maps entry.user to staff
+  const q = parseInt(document.getElementById('qty').value) || 1;
+  const cost = parseFloat(document.getElementById('cost').value) || 0;
+  const total = q * cost;
+
+  const entry = {
+    day: new Date().toISOString().slice(0, 10),
+    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    category: currentCat,
+    item_name: itemName,
+    quantity: q,
+    unit_cost: cost,
+    total_cost: total,
+    reason: currentReason,
+    logged_by: currentUser.name,
+    shift: currentShift
   };
+
+  const btn = document.getElementById('logBtn');
+  const oldText = btn.textContent;
+  btn.textContent = 'Saving to Neon...';
+  btn.disabled = true;
 
   try {
-    const res = await fetch(url, {
+    const res = await fetch(`${API_BASE}/sync`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(syncPayload)
+      body: JSON.stringify(entry)
     });
+    if (!res.ok) throw new Error("Failed to save to cloud");
     
-    if (res.ok) {
-      if (s) { 
-        s.style.color = 'var(--good)'; 
-        s.textContent = '✓ Synced to Neon'; 
-        setTimeout(() => { s.textContent = ''; }, 2000);
-      }
-    } else {
-      throw new Error('Bad response');
-    }
-  } catch (err) {
-    if (s) { 
-      s.style.color = 'var(--bad)'; 
-      s.textContent = '✗ Sync failed - saved locally only'; 
-    }
-    console.error('Cloud sync error:', err);
+    await fetchLogsFromCloud();
+    
+    document.getElementById('qty').value = 1;
+    calcTotal();
+    document.getElementById('itemSearch').value = '';
+    filterItems();
+  } catch (e) {
+    alert("Error saving to database: " + e.message);
   }
+  
+  btn.textContent = oldText;
+  btn.disabled = false;
 }
 
-document.getElementById('syncStatus').textContent = 'Syncing to cloud...';
-
-fetch('https://waste-log-api.onrender.com/api/sync', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify(syncPayload)
-})
-.then(response => response.json())
-.then(data => {
-  document.getElementById('syncStatus').textContent = '✓ Synced to Neon!';
-  setTimeout(() => document.getElementById('syncStatus').textContent = '', 2000);
+async function deleteLog(id) {
+  if(!confirm("Delete this entry from Neon database?")) return;
   
-  // Instantly fetch the updated logs from the database to refresh the dashboard
-  fetchLogsFromDatabase();
-})
-.catch(err => {
-  console.error('Cloud sync error:', err);
-  document.getElementById('syncStatus').textContent = '⚠ Sync failed. Check connection.';
-});
+  try {
+    const res = await fetch(`${API_BASE}/logs/${id}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error("Could not delete from server");
+    await fetchLogsFromCloud();
+  } catch (e) {
+    alert("Delete failed: " + e.message);
+  }
+}
 
 function renderEntries() {
   const filter = document.getElementById('filterDay').value;
-  const todayStr = new Date().toDateString();
+  const now = new Date();
+  const todayStr = now.toLocaleDateString();
   
-  let viewLogs = store.logs;
-  if (filter === 'today') {
-    viewLogs = viewLogs.filter(l => new Date(l.ts).toDateString() === todayStr);
+  document.getElementById('scopeLabel').textContent = filter === 'today' ? '' : '(All Time)';
+  
+  let list = liveLogs;
+  
+  if(filter === 'today') {
+    list = liveLogs.filter(l => {
+      const d = l.day ? new Date(l.day + 'T00:00:00') : (l.logged_at ? new Date(l.logged_at) : new Date());
+      return d.toLocaleDateString() === todayStr;
+    });
   }
+
+  list.sort((a,b) => b.id - a.id);
+
+  if(!currentUser.isMgr) {
+    const userFields = Array.isArray(currentUser.fields) ? currentUser.fields : [];
+    list = list.filter(l => userFields.includes(l.category));
+  }
+
+  const container = document.getElementById('entries');
+  if(list.length === 0) {
+    container.innerHTML = `<div class="empty">No entries found for this period.</div>`;
+  } else {
+    container.innerHTML = list.map(l => {
+      const isMine = l.logged_by === currentUser.name || currentUser.isMgr;
+      const cColor = CAT_COLOR[l.category] || '#999';
+      
+      const timeStr = l.time || '';
+      const dayStr = l.day ? l.day : '';
+      const itemName = l.item_name || l.item || 'Unknown Item';
+      const qty = l.quantity || l.qty || 1;
+      const totalCost = l.total_cost || l.total || 0;
+      
+      return `
+      <div class="entry">
+        <div class="tag" style="background:${cColor}"></div>
+        <div class="mid">
+          <div class="t">${qty}x ${itemName}</div>
+          <div class="s">${l.category} · ${l.reason} · ${l.logged_by} (${l.shift}) · ${timeStr} ${dayStr}</div>
+        </div>
+        <div class="amt">$${parseFloat(totalCost).toFixed(2)}</div>
+        ${isMine ? `<button class="del" onclick="deleteLog(${l.id})">×</button>` : ''}
+      </div>`;
+    }).join('');
+  }
+  updateSummary(list);
+}
+
+function updateSummary(filteredList = liveLogs) {
+  let total = 0;
+  const breakDown = {};
   
-  // Totals
-  const tTotal = viewLogs.reduce((sum, l) => sum + l.total, 0);
-  document.getElementById('sTotal').textContent = '$' + tTotal.toFixed(2);
-  document.getElementById('sCount').textContent = viewLogs.length;
-  
-  // Category Breakdown
-  const catTotals = {};
-  viewLogs.forEach(l => {
-    catTotals[l.cat] = (catTotals[l.cat] || 0) + l.total;
+  filteredList.forEach(l => {
+    const cost = parseFloat(l.total_cost || l.total || 0);
+    total += cost;
+    breakDown[l.category] = (breakDown[l.category] || 0) + cost;
   });
-  
-  document.getElementById('catBreak').innerHTML = Object.entries(catTotals).map(([cat, total]) => `
-    <div class="stat" style="padding:8px">
-      <div style="font-size:10px;color:var(--muted);text-transform:uppercase">${cat}</div>
-      <div style="font-size:16px;font-weight:700;color:${CAT_COLOR[cat]}">$${total.toFixed(2)}</div>
+
+  document.getElementById('sTotal').textContent = `$${total.toFixed(2)}`;
+  document.getElementById('sCount').textContent = filteredList.length;
+
+  const bHtml = Object.keys(breakDown).map(k => `
+    <div class="stat" style="padding:8px 12px">
+      <div class="n" style="font-size:16px;color:${CAT_COLOR[k]}">$${breakDown[k].toFixed(2)}</div>
+      <div class="l" style="font-size:10px">${k}</div>
     </div>
   `).join('');
+  document.getElementById('catBreak').innerHTML = bHtml;
+}
 
-  // List
-  const cont = document.getElementById('entries');
-  if (viewLogs.length === 0) {
-    cont.innerHTML = '<div class="empty">No entries logged.</div>';
-    return;
+/* ---------- MANAGER ACTIONS ---------- */
+async function seedDatabaseItems() {
+  const msgEl = document.getElementById('seedMsg');
+  if(!confirm("Are you sure you want to seed all default items into Neon? This will refresh your items table.")) return;
+
+  msgEl.style.color = 'var(--warn)';
+  msgEl.textContent = 'Seeding items to Neon...';
+
+  try {
+    const res = await fetch(`${API_BASE}/seed-items`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ customItems: DEFAULT_ITEMS })
+    });
+
+    const data = await res.json();
+    if (res.ok) {
+      msgEl.style.color = 'var(--good)';
+      msgEl.textContent = '✓ All items successfully uploaded to Neon!';
+      await fetchItemsFromCloud();
+    } else {
+      throw new Error(data.error || 'Failed to seed');
+    }
+  } catch (e) {
+    msgEl.style.color = 'var(--bad)';
+    msgEl.textContent = '✗ Error: ' + e.message;
   }
-  
-  cont.innerHTML = viewLogs.map(l => `
-    <div class="entry">
-      <div class="tag" style="background:${CAT_COLOR[l.cat]}"></div>
-      <div class="mid">
-        <div class="t">${l.qty}x ${l.item}</div>
-        <div class="s">${l.user} · ${l.reason} · ${new Date(l.ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div>
-      </div>
-      <div class="amt">$${l.total.toFixed(2)}</div>
-      ${currentUser.isMgr ? `<button class="del" onclick="delEntry('${l.id}')">×</button>` : ''}
-    </div>
-  `).join('');
 }
 
-function delEntry(id) {
-  if(!confirm('Delete this entry?')) return;
-  store.logs = store.logs.filter(x => x.id !== id);
-  saveStore();
-  renderEntries();
+async function loadStaffList() {
+  const sl = document.getElementById('staffList');
+  sl.innerHTML = '<div class="muted">Loading staff...</div>';
+  try {
+    const res = await fetch(`${API_BASE}/users`);
+    const users = await res.json();
+    
+    sl.innerHTML = users.map(u => {
+      let fields = [];
+      try { fields = typeof u.fields === 'string' ? JSON.parse(u.fields) : (u.fields || []); } catch(e){}
+      return `
+        <div class="staffrow">
+          <div class="tag" style="background:${u.is_manager?'var(--accent)':'var(--warn)'}"></div>
+          <div class="mid">
+            <div class="t">${u.name} (@${u.username})</div>
+            <div class="s">${u.is_manager ? 'Manager' : fields.join(', ')}</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  } catch (e) {
+    sl.innerHTML = '<div class="muted">Error loading staff list</div>';
+  }
 }
+
+function openSettings() {
+  document.getElementById('setRest').value = 'Akasha Restaurant';
+  loadStaffList();
+  document.getElementById('settings').showModal();
+}
+
+function closeSettings() { document.getElementById('settings').close(); }
+
+function saveSettings() { closeSettings(); }
 
 function exportCSV() {
-  if(store.logs.length === 0) return alert('No data to export');
-  let csv = 'Date,Time,User,Shift,Category,Item,Qty,UnitCost,Total,Reason\n';
-  store.logs.forEach(l => {
-    const d = new Date(l.ts);
-    csv += `"${d.toLocaleDateString()}","${d.toLocaleTimeString()}","${l.user}","${l.shift}","${l.cat}","${l.item.replace(/"/g,'""')}",${l.qty},${l.cost},${l.total},"${l.reason}"\n`;
-  });
-  
+  if(liveLogs.length === 0) return alert("No data to export");
+  const headers = ['ID', 'Date', 'Time', 'Category', 'Item', 'Qty', 'Unit Cost', 'Total Cost', 'Reason', 'Logged By', 'Shift'];
+  const rows = liveLogs.map(l => [
+    l.id,
+    l.day || '',
+    l.time || '',
+    l.category,
+    `"${l.item_name || l.item}"`,
+    l.quantity || l.qty,
+    l.unit_cost || l.cost,
+    l.total_cost || l.total,
+    l.reason,
+    l.logged_by || l.staff,
+    l.shift
+  ]);
+  const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
   const blob = new Blob([csv], { type: 'text/csv' });
   const url = window.URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `WasteLog_${new Date().toISOString().split('T')[0]}.csv`;
+  a.download = `WasteLog_${new Date().toLocaleDateString().replace(/\//g,'-')}.csv`;
   a.click();
 }
 
-/* ---------- REPORTS ---------- */
 function loadReports() {
   const tbody = document.getElementById('report-body');
-  const catTotals = {};
+  tbody.innerHTML = '';
   
-  store.logs.forEach(l => {
-    if (!catTotals[l.cat]) catTotals[l.cat] = { count: 0, cost: 0 };
-    catTotals[l.cat].count += l.qty;
-    catTotals[l.cat].cost += l.total;
+  const grouped = {};
+  liveLogs.forEach(l => {
+    if (!grouped[l.category]) {
+      grouped[l.category] = { totalCost: 0, items: [] };
+    }
+    grouped[l.category].totalCost += parseFloat(l.total_cost || l.total || 0);
+    grouped[l.category].items.push(l.item_name || l.item);
   });
 
-  if (Object.keys(catTotals).length === 0) {
-    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:15px;color:var(--muted)">No data for report</td></tr>';
-  } else {
-    tbody.innerHTML = Object.entries(catTotals).map(([cat, data]) => `
+  for (const cat in grouped) {
+    const data = grouped[cat];
+    const itemString = data.items.join(', ').substring(0, 40) + (data.items.length > 3 ? '...' : '');
+    
+    tbody.innerHTML += `
       <tr style="border-bottom: 1px solid var(--line);">
-        <td style="padding: 10px 4px; font-weight: 600; color: ${CAT_COLOR[cat]}">${cat}</td>
-        <td style="padding: 10px 4px;">${data.count}</td>
-        <td style="padding: 10px 4px; font-weight: 700;">$${data.cost.toFixed(2)}</td>
+        <td style="padding: 12px 4px; font-weight: 600; color: ${CAT_COLOR[cat] || '#333'}">${cat}</td>
+        <td style="padding: 12px 4px; font-size: 13px;">${itemString}</td>
+        <td style="padding: 12px 4px; font-weight: 700;">$${data.totalCost.toFixed(2)}</td>
       </tr>
-    `).join('');
+    `;
   }
   
+  if (Object.keys(grouped).length === 0) {
+     tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding: 20px;">No logs recorded yet.</td></tr>`;
+  }
+
   document.getElementById('report-modal').showModal();
 }
 
-/* ---------- SETTINGS ---------- */
-function openSettings() {
-  document.getElementById('setRest').value = store.settings.restName;
-  document.getElementById('setSync').value = store.settings.syncUrl;
-  
-  document.getElementById('staffList').innerHTML = store.users.map(u => `
-    <div class="staffrow">
-      <div class="mid">
-        <div class="t">${u.name}</div>
-        <div class="s">${u.isMgr ? 'Manager' : u.fields.join(', ')}</div>
-      </div>
-      <button class="iconbtn" onclick="delUser('${u.username}')">Remove</button>
-    </div>
-  `).join('');
-  
-  document.getElementById('settings').showModal();
-}
-
-function closeSettings() {
-  document.getElementById('settings').close();
-}
-
-function saveSettings() {
-  store.settings.restName = document.getElementById('setRest').value;
-  store.settings.syncUrl = document.getElementById('setSync').value;
-  saveStore();
-  document.getElementById('restName').textContent = store.settings.restName;
-  closeSettings();
-}
-
-function wipeToday() {
-  if(!confirm('Are you sure you want to clear ALL logs? This cannot be undone.')) return;
-  store.logs = [];
-  saveStore();
-  renderEntries();
-  closeSettings();
-}
-
-function delUser(un) {
-  if(un === currentUser.username) return alert("You can't delete yourself!");
-  if(!confirm('Delete this user?')) return;
-  store.users = store.users.filter(x => x.username !== un);
-  saveStore();
-  openSettings(); // refresh list
-}
-
-function testSync() {
-  const url = document.getElementById('setSync').value;
-  if (!url) return alert('Enter a URL first');
-  const msg = document.getElementById('syncTestMsg');
-  msg.textContent = 'Testing...';
-  
-  fetch(url, {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ test: true, ts: new Date() })
-  }).then(r => {
-    msg.textContent = r.ok ? '✓ Connection successful' : `⚠ Server responded with ${r.status}`;
-  }).catch(e => {
-    msg.textContent = '⚠ Network error or CORS issue: ' + e.message;
-  });
-}
-
-function toggleMenu() {
-  const m = document.getElementById('userMenu');
-  if (m.classList.contains('hidden')) {
-    m.innerHTML = `<button onclick="logout()">Log Out (${currentUser.username})</button>`;
-    m.classList.remove('hidden');
-  } else {
-    m.classList.add('hidden');
-  }
-}
-
-document.addEventListener('click', e => {
-  if(!e.target.closest('.who') && !e.target.closest('.menu')) {
-    document.getElementById('userMenu').classList.add('hidden');
-  }
-});
-
-function saveStore() {
-  localStorage.setItem('wasteStore', JSON.stringify(store));
-}
-
-// Boot
+// Start up
 init();
 </script>
 </body>
