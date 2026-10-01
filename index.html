@@ -294,13 +294,16 @@
     <h3>Restaurant name</h3>
     <input id="setRest" placeholder="e.g. Akasha Restaurant">
 
-    <h3>Database Seeder</h3>
-    <div class="muted" style="margin-bottom:8px">Click below to upload all master menu &amp; inventory items directly into your Neon PostgreSQL database table (`items`).</div>
+    <h3>Pending Staff Approvals</h3>
+    <div id="pendingList"></div>
+
+    <h3 style="margin-top:16px;">Active Staff Accounts</h3>
+    <div id="staffList"></div>
+
+    <h3 style="margin-top:16px;">Database Seeder</h3>
+    <div class="muted" style="margin-bottom:8px">Upload master menu & inventory items directly into Neon PostgreSQL (`items`).</div>
     <button class="primary" style="background:var(--warn);margin-top:0;" onclick="seedDatabaseItems()">🌱 Seed Items to Neon Database</button>
     <div id="seedMsg" class="muted" style="margin-top:6px;text-align:center;font-weight:bold;"></div>
-
-    <h3>Staff accounts (In Neon)</h3>
-    <div id="staffList"></div>
 
     <div style="height:18px"></div>
     <div class="flex">
@@ -449,7 +452,7 @@ async function doRegister() {
   if (!isMgr && fields.length === 0) return errEl.textContent = "Select at least one field.";
 
   errEl.style.color = "var(--muted)";
-  errEl.textContent = "Creating account in Neon...";
+  errEl.textContent = "Submitting request to database...";
 
   try {
     const res = await fetch(`${API_BASE}/users/register`, {
@@ -461,7 +464,7 @@ async function doRegister() {
     const data = await res.json();
 
     if (res.ok) {
-      alert("Account created successfully! You can now log in.");
+      alert("Account request submitted! Please ask Eder or Audrey to approve your access before logging in.");
       setAuthTab('login');
       document.getElementById('liUser').value = user;
     } else {
@@ -796,8 +799,55 @@ async function loadStaffList() {
   }
 }
 
+async function loadPendingUsers() {
+  const pl = document.getElementById('pendingList');
+  if (!pl) return;
+  pl.innerHTML = '<div class="muted">Checking pending requests...</div>';
+
+  try {
+    const res = await fetch(`${API_BASE}/users/pending`);
+    const users = await res.json();
+
+    if (users.length === 0) {
+      pl.innerHTML = '<div class="muted">No pending account requests.</div>';
+      return;
+    }
+
+    pl.innerHTML = users.map(u => {
+      let fields = [];
+      try { fields = typeof u.fields === 'string' ? JSON.parse(u.fields) : (u.fields || []); } catch(e){}
+      return `
+        <div class="staffrow" style="background:#fff8e7; padding:8px 10px; border-radius:8px; margin-bottom:6px;">
+          <div class="mid">
+            <div class="t">${u.name} (@${u.username})</div>
+            <div class="s">${u.is_manager ? 'Manager Request' : fields.join(', ')}</div>
+          </div>
+          <button class="iconbtn" style="background:var(--accent); color:#fff; padding:6px 12px;" onclick="approveUser(${u.id})">Approve</button>
+        </div>
+      `;
+    }).join('');
+  } catch (e) {
+    pl.innerHTML = '<div class="muted">Error loading pending requests</div>';
+  }
+}
+
+async function approveUser(id) {
+  try {
+    const res = await fetch(`${API_BASE}/users/approve/${id}`, { method: 'PUT' });
+    if (res.ok) {
+      loadPendingUsers();
+      loadStaffList();
+    } else {
+      alert("Failed to approve user.");
+    }
+  } catch (e) {
+    alert("Approval error: " + e.message);
+  }
+}
+
 function openSettings() {
   document.getElementById('setRest').value = 'Akasha Restaurant';
+  loadPendingUsers();
   loadStaffList();
   document.getElementById('settings').showModal();
 }
